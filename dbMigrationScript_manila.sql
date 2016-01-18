@@ -529,3 +529,19 @@ select lt.type, count(lt.type), round(max(lt.amount)) as max, round(min(lt.amoun
     where la.ENCODEDKEY = lt.PARENTACCOUNTKEY and
     la.accountholdertype = 'CLIENT'
     group by type;
+
+
+
+/* Grab all mambu loan schedules and dump them into a CSV to import
+	through python script
+*/
+
+SELECT 
+	PARENTACCOUNTKEY,
+    PRINCIPALDUE,
+    INTERESTDUE,
+    FEESDUE,
+    DUEDATE
+from guatamala.repayment
+order by PARENTACCOUNTKEY, DUEDATE 
+;

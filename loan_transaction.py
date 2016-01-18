@@ -13,6 +13,7 @@ auth_token = {}
 auth_token["X-Mifos-Platform-TenantId"] = 'default'
 auth_res = requests.post(API_URL + '/authentication?username=mifos&password=password', headers=auth_token, verify=False).json()
 auth_token["Authorization"] = "Basic %s" %auth_res['base64EncodedAuthenticationKey']
+print (auth_res)
 err_count = 0
 total_count = 0
 loans = requests.get(API_URL + '/loans?limit=0', headers=auth_token, verify=False).json()
