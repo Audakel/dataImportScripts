@@ -459,33 +459,73 @@ where
 -- AND b.NAME = 'Pasig'
 ;
 
+-- 8a10ca994b09d039014b174acc784cc0
+select ENCODEDKEY, type, REVERSALTRANSACTIONKEY from guatamala.loantransaction where REVERSALTRANSACTIONKEY is not null;
+-- TIPT945
 
-
-
-select 
-	if(l.TYPE='REPAYMENT','REPAYMENT',l.TYPE) as type
-	,l.ENCODEDKEY
-    ,l.PARENTACCOUNTKEY
-    ,l.AMOUNT
-    ,date(l.CREATIONDATE)
+SELECT 
+	lt.parentaccountkey
 from 
-	guatamala.loantransaction l
-    ,guatamala.loanaccount la
---    ,`group` g
---    ,loanproduct lp
-where 
-	(
-		l.parentaccountkey = la.encodedkey
-		-- AND la.ACCOUNTHOLDERTYPE = 'CLIENT'
---        AND lp.ENCODEDKEY = la.PRODUCTTYPEKEY
---        AND g.ENCODEDKEY = la.ACCOUNTHOLDERKEY
-    )
-    AND
-	(
-        1=1
---        l.`type` like '%FEE%'
---        or l.`type` = 'REPAYMENT'
-    )
-    and l.PARENTACCOUNTKEY = '8a181b3b499d76ab0149af538e714c87'
-order by l.parentaccountkey, l.creationdate
+	guatamala.loantransaction lt
+group by lt.parentaccountkey
+order by (count(lt.parentaccountkey)) desc 
+limit 10
 ;
+
+SELECT id from guatamala.loanaccount where encodedkey = '8a9d7e284b75fe4b014b7a05572a0b1b';
+
+(select 
+	lt.TYPE,
+	lt.ENCODEDKEY,
+    lt.PARENTACCOUNTKEY,
+    lt.AMOUNT,
+    DATE_FORMAT(date(lt.CREATIONDATE), '%d/%m/%Y') as date,
+    ifnull(lt.REVERSALTRANSACTIONKEY,'') as reversalKey
+from 
+	guatamala.loantransaction lt,
+    guatamala.loanaccount la
+
+where 
+	lt.parentaccountkey = la.encodedkey
+    and la.encodedkey in 
+    (
+		SELECT 
+			lt.parentaccountkey
+		from 
+			 (guatamala.loantransaction lt, guatamala.loanaccount la)
+		where
+			la.ENCODEDKEY = lt.PARENTACCOUNTKEY and
+            -- la.ACCOUNTSTATE like '%CLOSED%'
+			-- la.accountholdertype = 'GROUP'
+			-- lt.parentaccountkey= '8a9d7e284b75fe4b014b7a05572a0b1b' or
+			-- lt.parentaccountkey= '8a9c4d8c4c2a3654014c2da9018a6e9e' -- or
+			-- lt.parentaccountkey= '8a36219649e44d120149e8c4c86f50fa' or
+			-- lt.parentaccountkey= '8a9d992d4c1acee0014c2ed7d6cb14ad' or
+			-- lt.parentaccountkey= '8a10d7894b2f253a014b317dcb8e0e0d' or
+			-- lt.parentaccountkey= '8a9c4d8c4c2a3654014c2d8dd19c45ec' or
+			-- lt.parentaccountkey= '8aa85edc4ae70c4a014aefac6cbf5b03' or
+            
+            -- closed
+			(lt.parentaccountkey= '8a9d992d4c1acee0014c2ed7d6cb14ad' or
+			lt.parentaccountkey= '8a36219649e44d120149e8c4c86f50fa' or
+			lt.parentaccountkey= '8a9d7e284b75fe4b014b7a05572a0b1b')
+		group by lt.parentaccountkey
+		-- order by (count(lt.parentaccountkey)) desc 
+    )    
+	-- AND la.ACCOUNTHOLDERTYPE = 'CLIENT'
+	-- AND lp.ENCODEDKEY = la.PRODUCTTYPEKEY
+	-- AND g.ENCODEDKEY = la.ACCOUNTHOLDERKEY
+    -- and l.PARENTACCOUNTKEY = '8a181b3b499d76ab0149af538e714c87'
+order by lt.parentaccountkey asc, lt.creationdate asc)
+ ;
+
+
+SELECT * from 
+SELECT * from guatamala.loanaccount where ENCODEDKEY = '8a9c4d8c4c2a3654014c2da9018a6e9e';
+SELECT * from guatamala.loanaccount where ACCOUNTSTATE like '%CLOSED%';
+
+select lt.type, count(lt.type), round(max(lt.amount)) as max, round(min(lt.amount)) as min, la.ACCOUNTHOLDERTYPE, la.ACCOUNTSTATE 
+	from (guatamala.loantransaction lt, guatamala.loanaccount la)
+    where la.ENCODEDKEY = lt.PARENTACCOUNTKEY and
+    la.accountholdertype = 'CLIENT'
+    group by type;

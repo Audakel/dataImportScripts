@@ -43,7 +43,7 @@ def errHandle(res, parent, transaction=''):
     total_count += 1
     if 'errors' in res.keys():
         err_count += 1
-        print('******************************')
+        print('\n******************************')
         print(res)
         print()
         print('Mambu Loan Key: {}'.format(parent))
@@ -53,11 +53,12 @@ def errHandle(res, parent, transaction=''):
         sys.stdout.flush()
     else:
         if transaction:
-            print('transaction ({})'.format(transaction._type))
+            # print('transaction ({})'.format(transaction._type))
+            print('.', end="")
+            sys.stdout.flush()
         else:
             print('fee')
-        # print('.', end="")
-        # sys.stdout.flush()
+
 
 
 def handle_repayment(transaction):
