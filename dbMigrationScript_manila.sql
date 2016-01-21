@@ -360,11 +360,7 @@ You may have to add the fund id, payment id, by hand
 change all the interest rates
 chagne all the product names to match
 */
-
-select  id, REPAYMENTINSTALLMENTS, REPAYMENTPERIODCOUNT, REPAYMENTPERIODUNIT from loanaccount where encodedkey = '8a36219649e44d120149e8c4c86f50fa';
-
  select
-	
     replace(rtrim(b.NAME), ' ', '_') 						as OFFICE_NAME, 
     'Group'													as LOAN_TYPE,
     g.GROUPNAME 											as GROUP_NAME,
@@ -381,10 +377,10 @@ select  id, REPAYMENTINSTALLMENTS, REPAYMENTPERIODCOUNT, REPAYMENTPERIODUNIT fro
     if (la.REPAYMENTPERIODCOUNT is null or la.REPAYMENTPERIODCOUNT = 0, 
 		'1', la.REPAYMENTPERIODCOUNT)						as 'REPAID',
     if (la.REPAYMENTPERIODCOUNT is null or la.REPAYMENTPERIODCOUNT = 0, 
-		'Months', 'Months') 									as 'RPUNIT',
+		'Months', 'Days') 									as 'RPUNIT',
     la.REPAYMENTINSTALLMENTS 								as 'TERM',
     if (la.REPAYMENTPERIODCOUNT is null or la.REPAYMENTPERIODCOUNT = 0, 
-		'Months', 'Months') 									as 'LTUNIT',
+		'Months', 'Days') 									as 'LTUNIT',
     if (la.INTERESTCHARGEFREQUENCY = 'EVERY_FOUR_WEEKS', 
 		ROUND(la.INTERESTRATE * 13 / 12, 6), la.INTERESTRATE) as 'NOMINAL',
     if (la.INTERESTCHARGEFREQUENCY = 'EVERY_MONTH', 'Per Month', 
@@ -416,7 +412,7 @@ where
 select id, external_id, firstname, lastname from `mifostenant-default`.m_client;
 
 SELECT 
-
+ 
     replace(rtrim(b.NAME), ' ', '_') 						as OFFICE_NAME, 
     'Individual'											as LOAN_TYPE,
     CONCAT(c.firstname, ' ', 
@@ -437,10 +433,10 @@ SELECT
     if (la.REPAYMENTPERIODCOUNT is null or la.REPAYMENTPERIODCOUNT = 0, 
 		'1', la.REPAYMENTPERIODCOUNT)						as 'REPAID',
     if (la.REPAYMENTPERIODCOUNT is null or la.REPAYMENTPERIODCOUNT = 0, 
-		'Months', 'Months') 									as 'RPUNIT',
+		'Months', 'Days') 									as 'RPUNIT',
     la.REPAYMENTINSTALLMENTS 								as 'TERM',
     if (la.REPAYMENTPERIODCOUNT is null or la.REPAYMENTPERIODCOUNT = 0, 
-		'Months', 'Months') 									as 'LTUNIT',
+		'Months', 'Days') 									as 'LTUNIT',
     if (la.INTERESTCHARGEFREQUENCY = 'EVERY_FOUR_WEEKS', 
 		ROUND(la.INTERESTRATE * 13 / 12, 6), la.INTERESTRATE) as 'NOMINAL',
     if (la.INTERESTCHARGEFREQUENCY = 'EVERY_MONTH', 'Per Month', 
@@ -476,42 +472,52 @@ order by (count(lt.parentaccountkey)) desc
 limit 10
 ;
 
+SELECT id from guatamala.loanaccount where encodedkey = '8a9d7e284b75fe4b014b7a05572a0b1b';
 
-SELECT * from guatamala.loantransaction where `type` = 'DISBURSMENT';
-SELECT * from guatamala.loanaccount;
-
-
-select 
+(select 
 	lt.TYPE,
 	lt.ENCODEDKEY,
     lt.PARENTACCOUNTKEY,
     lt.AMOUNT,
     DATE_FORMAT(date(lt.CREATIONDATE), '%d/%m/%Y') as date,
-    ifnull(lt.REVERSALTRANSACTIONKEY,'') as reversalKey,
-    la.REPAYMENTINSTALLMENTS
+    ifnull(lt.REVERSALTRANSACTIONKEY,'') as reversalKey
 from 
 	guatamala.loantransaction lt,
     guatamala.loanaccount la
+
 where 
 	lt.parentaccountkey = la.encodedkey
-    and la.ENCODEDKEY = lt.PARENTACCOUNTKEY
-    and lt.type not like '%INTEREST%'
-    -- la.ACCOUNTSTATE like '%CLOSED%'
-	-- la.accountholdertype = 'GROUP'
-	-- lt.parentaccountkey= '8a9d7e284b75fe4b014b7a05572a0b1b' or
-	-- lt.parentaccountkey= '8a9c4d8c4c2a3654014c2da9018a6e9e' or
-	-- lt.parentaccountkey= '8a36219649e44d120149e8c4c86f50fa' or
-	-- lt.parentaccountkey= '8a9d992d4c1acee0014c2ed7d6cb14ad' or
-	-- lt.parentaccountkey= '8a10d7894b2f253a014b317dcb8e0e0d' or
-	-- lt.parentaccountkey= '8a9c4d8c4c2a3654014c2d8dd19c45ec' or
-	-- lt.parentaccountkey= '8aa85edc4ae70c4a014aefac6cbf5b03' or
-	-- closed
-	-- lt.parentaccountkey= '8a9d992d4c1acee0014c2ed7d6cb14ad' or
-	-- lt.parentaccountkey= '8a36219649e44d120149e8c4c86f50fa' or
-	-- lt.parentaccountkey= '8a8188ae51f3d72d0151f90675461d5f'
-order by lt.parentaccountkey asc, lt.creationdate asc
+    and la.encodedkey in 
+    (
+		SELECT 
+			lt.parentaccountkey
+		from 
+			 (guatamala.loantransaction lt, guatamala.loanaccount la)
+		where
+			la.ENCODEDKEY = lt.PARENTACCOUNTKEY and
+            -- la.ACCOUNTSTATE like '%CLOSED%'
+			-- la.accountholdertype = 'GROUP'
+			-- lt.parentaccountkey= '8a9d7e284b75fe4b014b7a05572a0b1b' or
+			-- lt.parentaccountkey= '8a9c4d8c4c2a3654014c2da9018a6e9e' -- or
+			-- lt.parentaccountkey= '8a36219649e44d120149e8c4c86f50fa' or
+			-- lt.parentaccountkey= '8a9d992d4c1acee0014c2ed7d6cb14ad' or
+			-- lt.parentaccountkey= '8a10d7894b2f253a014b317dcb8e0e0d' or
+			-- lt.parentaccountkey= '8a9c4d8c4c2a3654014c2d8dd19c45ec' or
+			-- lt.parentaccountkey= '8aa85edc4ae70c4a014aefac6cbf5b03' or
+            
+            -- closed
+			(lt.parentaccountkey= '8a9d992d4c1acee0014c2ed7d6cb14ad' or
+			lt.parentaccountkey= '8a36219649e44d120149e8c4c86f50fa' or
+			lt.parentaccountkey= '8a9d7e284b75fe4b014b7a05572a0b1b')
+		group by lt.parentaccountkey
+		-- order by (count(lt.parentaccountkey)) desc 
+    )    
+	-- AND la.ACCOUNTHOLDERTYPE = 'CLIENT'
+	-- AND lp.ENCODEDKEY = la.PRODUCTTYPEKEY
+	-- AND g.ENCODEDKEY = la.ACCOUNTHOLDERKEY
+    -- and l.PARENTACCOUNTKEY = '8a181b3b499d76ab0149af538e714c87'
+order by lt.parentaccountkey asc, lt.creationdate asc)
  ;
-
 
 
 SELECT * from 
@@ -526,49 +532,19 @@ select lt.type, count(lt.type), round(max(lt.amount)) as max, round(min(lt.amoun
 
 
 
-/* 
-	Grab all mambu loan schedules and dump them into a CSV to import
+/* Grab all mambu loan schedules and dump them into a CSV to import
 	through python script
 */
+
+
 
 SELECT 
 	PARENTACCOUNTKEY,
     PRINCIPALDUE,
     INTERESTDUE,
     FEESDUE,
-    DUEDATE
-from guatamala.repayment
+    DATE_FORMAT(date(DUEDATE), '%Y-%m-%d') as date
+    
+from guatemala.repayment
 order by PARENTACCOUNTKEY, DUEDATE 
 ;
-
-
-/* 
-	Grab all fee info
-*/
-
-SELECT 
-	la.ID,
-	lt.`TYPE`,
-    fa.AMOUNT as pdf_amt,
-    lt.AMOUNT as lt_amt,
-    if((lt.AMOUNT < 0), lt.AMOUNT, fa.AMOUNT) as real_amt,
-    la.REPAYMENTINSTALLMENTS,
-    lt.REVERSALTRANSACTIONKEY,
-    fa.LOANPREDEFINEDFEEAMOUNTS_ENCODEDKEY_OWN,
-    lt.PARENTACCOUNTKEY
-FROM 
-	guatamala.predefinedfeeamount fa,
-    guatamala.loantransaction lt,
-    guatamala.loanaccount la
-    -- guatamala.repayment r
-where
-	fa.LOANPREDEFINEDFEEAMOUNTS_ENCODEDKEY_OWN = lt.ENCODEDKEY
-    and la.ENCODEDKEY = lt.PARENTACCOUNTKEY
-    and lt.`type` = 'FEE'
-order by lt.PARENTACCOUNTKEY, lt.CREATIONDATE	
-;
-
-select * from guatamala.repayment;
-select * from guatamala.loantransaction where PARENTACCOUNTKEY = '8a10ca994b09d039014b0e1d85e56713';
-select * from guatamala.loanaccount where REPAYMENTINSTALLMENTS = 1;
-select * from guatamala.predefinedfeeamount;
