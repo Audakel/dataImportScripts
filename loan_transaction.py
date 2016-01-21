@@ -19,6 +19,8 @@ total_count = 0
 loans = requests.get(API_URL + '/loans?limit=0', headers=auth_token, verify=False).json()
 
 loans = {l['externalId']: l['id'] for l in loans['pageItems']}
+disbursement_fees = []
+
 DATE_FORMAT = "dd MMMM yyyy"
 LOCALE = "en"
 
@@ -29,7 +31,10 @@ def extract_other(history):
     return [x for x in history if not x._type.startswith('FEE')]
 
 def extract_fee_sum(history):
-    return sum([float(x.amount) for x in history if x._type.startswith('FEE')])
+    fee_info = next(({'date': x.creation, 'installments': float(x.installments)} for x in history if x._type.startswith('DISBURSMENT')), None)
+    fee_info.update({'amount': sum([float(x.amount) for x in history if x._type.startswith('FEE')])})
+    print('fee_info: {}'.format(fee_info))
+    return fee_info
 
 def extract_repayments(history):
     return [x for x in history if 'REPAYMENT' in x._type]
@@ -84,23 +89,23 @@ def process_loan(historyDirty):
         loanid = loans[parent] # look up mifos id with externalId
     except KeyError as e:
         # error fetching loan from mifos
-        print("Can't find key: %s " %parent)
+        print("\n\t\t\tCan't find key: %s " % parent)
         return
     
     history = cleanHistory(historyDirty)
 
     fees = extract_fee_sum(history)
-    if not isclose(fees, 0):
-        feeDate = requests.get(API_URL + '/loans/{}?limit=0&associations=repaymentSchedule'.format(loanid),
-            headers=auth_token, verify=False).json()['repaymentSchedule']['periods'][-1]['dueDate']
-        feeDateFormated = '{}-{}-{}'.format(feeDate[0], feeDate[1], feeDate[2])
+    if not isclose(fees['amount'], 0):
+        # feeDate = requests.get(API_URL + '/loans/{}?limit=0&associations=repaymentSchedule'.format(loanid),
+        #     headers=auth_token, verify=False).json()['repaymentSchedule']['periods'][-1]['dueDate']
+        # feeDateFormated = '{}-{}-{}'.format(feeDate[0], feeDate[1], feeDate[2])
         # migrate fees
         data = {
             "locale": LOCALE,
             "dateFormat": DATE_FORMAT,
-            "amount": fees,
-            "dueDate": datetime.strftime(datetime.strptime(feeDateFormated, '%Y-%m-%d'), '%d %B %Y'),
-            "chargeId": "5"
+            "amount": fees['amount'] / fees['installments'],
+            "dueDate": formatDate(fees['date']),
+            "chargeId": "3"
         }
         res = requests.post(API_URL + '/loans/{}/charges'.format(loanid), headers=auth_token, json=data, verify=False).json()
         errHandle(res, parent)
@@ -111,7 +116,7 @@ def process_loan(historyDirty):
     last_repayment = {}
     res = {}
     for transaction in transactions:
-        if transaction._type == 'REPAYMENT' or transaction._type == 'DEFERRED_INTEREST_PAID':
+        if transaction._type == 'REPAYMENT':
             data = {
                 "locale": LOCALE,
                 "dateFormat": DATE_FORMAT,
@@ -122,52 +127,18 @@ def process_loan(historyDirty):
             res = requests.post(API_URL+ '/loans/{}/transactions?command=repayment'.format(loanid), headers=auth_token, json=data, verify=False).json()
             # last_repayment = {'id': res['resourceId'], 'amount': transaction.amount}
 
-        # elif transaction._type == 'DEFERRED_INTEREST_PAID':
-        #     data = {
-        #         "locale": LOCALE,
-        #         "dateFormat": DATE_FORMAT,
-        #         "transactionDate": formatDate(transaction.creation),
-        #         "transactionAmount": transaction.amount,
-        #     }
-        #     res = requests.post(API_URL+ '/loans/{}/transactions?command=waiveInterest'.format(loanid), headers=auth_token, json=data, verify=False).json()
 
         elif 'REPAYMENT' in transaction._type:
             data = {
-                "locale": LOCALE ,
+                "locale": LOCALE,
                 "dateFormat": DATE_FORMAT,
                 "transactionDate": formatDate(transaction.creation),
                 "transactionAmount": (Decimal(last_repayment['amount']) + Decimal(transaction.amount)).quantize(Decimal(10) ** -3)
             }
             res = requests.post(API_URL+ '/loans/{}/transactions/{}'.format(loanid, last_repayment['id']), headers=auth_token, json=data, verify=False).json()
-    
 
-        elif transaction._type == 'INTEREST_APPLIED':
-            ('handle for {}'.format(transaction._type))
-        elif transaction._type == 'DEFERRED_INTEREST_PAID':
-            ('handle for {}'.format(transaction._type))
-        elif transaction._type == 'DEFERRED_INTEREST_APPLIED':
-            ('handle for {}'.format(transaction._type))
-        else:
-            ('no handle for {}'.format(transaction._type))
         errHandle(res, parent, transaction) 
-            # if transaction._type == 'INTEREST_APPLIED':
-            #     pass
-            # elif transaction._type == 'DEFERRED_INTEREST_PAID':
-                
-            # elif transaction._type == 'DEFERRED_INTEREST_APPLIED':
-            
-            # elif transaction._type == 'INTEREST_REDUCTION_ADJUSTMENT':
-            
-            # elif transaction._type == 'DEFERRED_INTEREST_PAID_ADJUSTMENT':
-            
-            # elif transaction._type == 'INTEREST_DUE_REDUCED':
-            
-            # elif transaction._type == 'DEFERRED_INTEREST_APPLIED_ADJUSTMENT':
-            
-            # elif transaction._type == 'INTEREST_APPLIED_ADJUSTMENT':
-            
-            # else:
-            #     print ('Not covered lel')
+
         
         
 
@@ -177,19 +148,20 @@ def process_loan(historyDirty):
 #3: l.AMOUNT
 #4: l.CREATIONDATE
 class Transaction():
-    def __init__(self, _type, key, parent, amount, creation, reversalKey):
+    def __init__(self, _type, key, parent, amount, creation, reversalKey, installments):
         self._type = _type
         self.key = key
         self.parent = parent
         self.amount = amount
         self.creation = creation
         self.reversalKey = reversalKey
+        self.installments = installments
     def __str__(self):
-        return '{}, {}, {}, {}, {}, revKey:{}'.format(self._type, self.key,  self.parent, self.amount, self.creation, self.reversalKey)
+        return '{}, {}, {}, {}, {}, {}'.format(self._type, self.key,  self.parent, self.amount, self.creation, self.reversalKey, self.installments)
     def __repr__(self):
-        return '{}, {}, {}, {}, {}, revKey:{}'.format(self._type, self.key,  self.parent, self.amount, self.creation, self.reversalKey)
+        return '{}, {}, {}, {}, {}, {}'.format(self._type, self.key,  self.parent, self.amount, self.creation, self.reversalKey, self.installments)
     def __unicode__(self):
-        return '{}, {}, {}, {}, {}, revKey:{}'.format(self._type, self.key,  self.parent, self.amount, self.creation, self.reversalKey)
+        return '{}, {}, {}, {}, {}, {}'.format(self._type, self.key,  self.parent, self.amount, self.creation, self.reversalKey, self.installments)
         
 def main():
 
@@ -201,18 +173,23 @@ def main():
             tran = Transaction(*line)
             if current_parent != tran.parent:
                 # change the following line to process_loan(history) to remove threading
-                # executor.submit(process_loan, history)
-                print('calling proc lona with {} transactions'.format(len(history)))
-                process_loan(history)
-                print('gotback')
+                executor.submit(process_loan, history)
+                # process_loan(history)
                 history = []
             current_parent = tran.parent
             ignore = []
             history.append(tran)
+        process_loan(history)
         executor.shutdown()
+        print('\n\nDONE!!!!\n\n')
 
 def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
     return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
             
 if __name__ == "__main__":
     main()
+
+    # hung on 8a18227c4fdca2a8014ffc38344c0535
+    #         8a18227c4fdca2a8014ffc38344c0535
+    #         8a18227c4fdca2a8014ffc3a9a9f059c - line 2696
+    #         8a18227c4fdca2a8014ffc4542ee06d3
