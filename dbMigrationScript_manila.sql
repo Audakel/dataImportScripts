@@ -536,7 +536,7 @@ SELECT
     PRINCIPALDUE,
     INTERESTDUE,
     FEESDUE,
-    DUEDATE
+    DATE_FORMAT(date(DUEDATE), '%Y-%m-%d') as date
 from guatamala.repayment
 order by PARENTACCOUNTKEY, DUEDATE 
 ;
