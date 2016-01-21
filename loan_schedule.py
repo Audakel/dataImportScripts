@@ -44,25 +44,27 @@ class Schedule():
 # FEESDUE,
 # DUEDATE
 update_schedule = """
-UPDATE m_loan_schedule 
+UPDATE m_loan_repayment_schedule 
 SET 
-    duedate = ?,
-    principal_amount = ?,
-    interest_amount = ?,
-    fee_charges_amount = ?
+    duedate = %s,
+    principal_amount = %s,
+    interest_amount = %s
 WHERE
-    loan_id = ?
-    AND installment = ?
+    loan_id = %s
+    AND installment = %s
 """
 
 update_summary = """
 
 """
 def updateLoanSchedule(cursor, loan):
+    global cnx
     for i, schedule in enumerate(loan.schedule):
         cursor.execute(update_schedule, 
-            (schedule.due, schedule.principal, schedule.interest, schedule.fee, loan.id, i+1)
+            (schedule.due, schedule.principal, schedule.interest, loan.id, i+1)
         )
+    cnx.commit()
+    print('schedule updated', loan.id)
 
 def main(cursor):
     with open('schedules.csv') as c, concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
@@ -71,18 +73,25 @@ def main(cursor):
         history = []
         for line in lines:
             s = Schedule(*line)
-            if current_parent != tran.parent:
+            if s.parent == 'PARENTACCOUNTKEY':
+                continue
+            if not s.parent in loans:
+                # skip the error message
+                continue
+            if current_parent != s.parent:
                 # uncomment the two lines to enable threading
-                # executor.submit(process_loan, (cursor, Loan(s.parent, history)))
-                process_loan(cursor, Loan(s.parent, history))
+                # executor.submit(updateLoanSchedule, (cursor, Loan(s.parent, history)))
+                if current_parent != '':
+                    updateLoanSchedule(cursor, Loan(current_parent, history))
                 history = []
             current_parent = s.parent
             ignore = []
             history.append(s)
-        # executor.submit(process_loan, (cursor, Loan(s.parent, history)))
-        process_loan(cursor, Loan(s.parent, history))
+        # executor.submit(updateLoanSchedule, (cursor, Loan(s.parent, history)))
+        updateLoanSchedule(cursor, Loan(s.parent, history))
         executor.shutdown()
-    
+
+cnx = ''
 if __name__ == '__main__':
     try:
         cnx = mysql.connector.connect(
@@ -90,8 +99,9 @@ if __name__ == '__main__':
             host='localhost',
             database='mifostenant-default'
         )
-        cursor = cnx.cursor(prepared=True)
+        cursor = cnx.cursor()
         main(cursor)
+        cnx.commit()
     finally:
         cnx.close()
             
