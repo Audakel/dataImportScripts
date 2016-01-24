@@ -29,8 +29,12 @@ fix min/max interst rates
 
 
 -- Grab all the offices from Mambu and put into Mifos
-INSERT INTO `mifostenant-default`.`m_office` VALUES (1,NULL,'.','1','Head Office','2009-01-01');
+-- INSERT INTO `mifostenant-default`.`m_office` VALUES (1,NULL,'.','1','Head Office','2009-01-01');
 
+INSERT INTO `mifostenant-default`.`m_office` 
+	(`parent_id`, `name`, `opening_date`) 
+VALUE (1,'OFFICE TBD', current_date())
+; 
 
 INSERT INTO 
 	`mifostenant-default`.`m_office` (`parent_id`, `external_id`, `name`, `opening_date`) 
@@ -41,10 +45,7 @@ FROM
 ;    
 
 
-INSERT INTO `mifostenant-default`.`m_office` 
-	(`parent_id`, `name`, `opening_date`) 
-VALUE (1,'OFFICE TBD', current_date())
-; 
+
 
 
 UPDATE 
@@ -100,21 +101,20 @@ UPDATE `pasig`.`client` SET LASTNAME = REPLACE(LASTNAME, ',', ' ')LIMIT 60000;
 UPDATE `pasig`.`user` SET `FIRSTNAME`='Roland' WHERE `ENCODEDKEY`='8a28afc7474813a4014757b332b420e5';
 
 -- m_staff
-INSERT INTO 
-	`mifostenant-default`.`m_staff` 
-	(`is_loan_officer`, `office_id`, `firstname`, `lastname`, `display_name`) 
-SELECT 
-	1, 1, firstname, lastname collate utf8_bin, concat(lastname,", ",FIRSTNAME)  as displayname 
-FROM 
-	`pasig`.user
-GROUP BY displayname
-;
-
-
 -- Put all the default TBD stuff in
 INSERT INTO `mifostenant-default`.`m_staff` 
 	(`is_loan_officer`, `office_id`, `firstname`, `lastname`, `display_name`) 
 values (1, 1, 'STAFF', 'TBD', 'STAFF TBD')
+;
+
+INSERT INTO 
+	`mifostenant-default`.`m_staff` 
+	(`is_loan_officer`, `office_id`, `firstname`, `lastname`, `display_name`, `external_id`) 
+SELECT 
+	1, 1, firstname, lastname collate utf8_bin, concat(lastname,", ",FIRSTNAME)  as displayname, id
+FROM 
+	`pasig`.user
+GROUP BY displayname
 ;
 
 /*
@@ -170,35 +170,42 @@ Change 'Senahu' to 'Senahu 1'
 
 select * from `mifostenant-default`.`m_office`;
 select * from `mifostenant-default`.`m_client`;
+SELECT * from `mifostenant-default`.m_office;
+SELECT * from guatamala.user;
 
 INSERT INTO `mifostenant-default`.`m_user` 
-	(`external_id`, `status_enum`, `activation_date`, `office_joining_date`, `office_id`, `staff_id`, `firstname`, `middlename`, `lastname`, `display_name`, `submittedon_date`, `submittedon_userid`, `activatedon_userid`) VALUES ('', '', 'fghjkl', '300', '2015-04-15', '2015-04-15', '7', '78', 'CIRILA', 'DADULLA', 'MALLILLIN', 'CIRILA DADULLA MALLILLIN', '2015-04-15', '1', '1');
-	(`firstname`, `lastname`, `middlename`, 
+	(`external_id`, `status_enum`, `activation_date`, `office_joining_date`, `office_id`, `staff_id`, 
+    `firstname`, `middlename`, `lastname`, `display_name`, `submittedon_date`, `submittedon_userid`, 
+    `activatedon_userid`) 
+    VALUES ('fghjkl', '300', '2015-04-15', '2015-04-15', '7', '78', 'CIRILA',
+    'DADULLA', 'MALLILLIN', 'CIRILA DADULLA MALLILLIN', '2015-04-15', '1', '1');
+	
 
 select 
-	c.FIRSTNAME                      as FIRST_NAME, 
-    c.LASTNAME                       as LAST_NAME, 
-    COALESCE(c.MIDDLENAME, '')       as MIDDLE_NAME, 
-    /*COALESCE((replace(rtrim((ifnull(
-		b2.name, b.name))), ' ', '_')),  
-        'OFFICE_TBD')				 as OFFICE_NAME, */
-	
-        
-    COALESCE((CONCAT(
-		s.FIRSTNAME, ' ', s.LASTNAME
-	)), 'STAFF TBD') 				 as STAFF_NAME, 
     c.ID                             as EXTERNAL_ID,
+    '300'							 as STATUS_ENUM,
     DATE_FORMAT(date(LEAST(
 		coalesce(c.CREATIONDATE, CURDATE()),
         coalesce(c.APPROVEDDATE, CURDATE()),
         coalesce(c.ACTIVATIONDATE, CURDATE()),
         coalesce(lad.DISBURSEMENTDATE, CURDATE())
 	)), '%d/%m/%Y')                  as ACTIVATION_DATE,
-    'TRUE'                           as ACTIVE
+	ifnull(o.id, 2)					 as OFFICE_ID, 
+	COALESCE(ms.id , 1) 			 as STAFF_ID, 
+	c.FIRSTNAME                      as FIRST_NAME, 
+    c.LASTNAME                       as LAST_NAME, 
+    COALESCE(c.MIDDLENAME, '')       as MIDDLE_NAME,
+    concat(c.FIRSTNAME, ' ', 
+		COALESCE(c.MIDDLENAME, ''), ' ',
+        c.LASTNAME)					 as DISPLAY_NAME,
+	1 								 as submittedon_userid,
+    1 								 as activatedon_userid
 from 
 	pasig.client c
 	left join pasig.branch b on c.ASSIGNEDBRANCHKEY = b.ENCODEDKEY
+    left join `mifostenant-default`.m_office o on o.external_id = b.id
 	left join pasig.user s   on c.ASSIGNEDUSERKEY   = s.ENCODEDKEY
+    left join `mifostenant-default`.m_staff ms on s.id = ms.external_id
     left join
     (
 		SELECT * FROM (
@@ -572,3 +579,4 @@ select * from guatamala.repayment;
 select * from guatamala.loantransaction where PARENTACCOUNTKEY = '8a10ca994b09d039014b0e1d85e56713';
 select * from guatamala.loanaccount where REPAYMENTINSTALLMENTS = 1;
 select * from guatamala.predefinedfeeamount;
+

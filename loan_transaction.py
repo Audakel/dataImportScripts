@@ -66,7 +66,7 @@ def errHandle(res, parent, transaction=''):
             print('fee')
 
 def handle_repayment(transaction):
-   return res
+   pass
 
 
 def handle_fee(transaction):
@@ -75,11 +75,9 @@ def handle_fee(transaction):
             
 def process_loan(historyDirty):
     try:
-        # look up the loan somehow :p
         if len(historyDirty) < 1:
             return
 
-        # skip the first row
         if historyDirty[0].parent == 'PARENTACCOUNTKEY':
             return
 
@@ -87,21 +85,15 @@ def process_loan(historyDirty):
         try:
             loanid = loans[parent] # look up mifos id with externalId
         except KeyError as e:
-            # error fetching loan from mifos
             print("\n\t\t\tCan't find key: %s " % parent)
             return
         
         pid = os.getpid()
         print('PID', pid, 'starting parent loan', parent)
-
         history = cleanHistory(historyDirty)
-
         fees = extract_fee_sum(history)
+
         if not isclose(fees['amount'], 0):
-            # feeDate = requests.get(API_URL + '/loans/{}?limit=0&associations=repaymentSchedule'.format(loanid),
-            #     headers=auth_token, verify=False).json()['repaymentSchedule']['periods'][-1]['dueDate']
-            # feeDateFormated = '{}-{}-{}'.format(feeDate[0], feeDate[1], feeDate[2])
-            # migrate fees
             data = {
                 "locale": LOCALE,
                 "dateFormat": DATE_FORMAT,
@@ -111,6 +103,8 @@ def process_loan(historyDirty):
             }
             res = requests.post(API_URL + '/loans/{}/charges'.format(loanid), headers=auth_token, json=data, verify=False, timeout=10).json()
             errHandle(res, parent)
+
+        return
 
         transactions = extract_other(history)
         # transactions = history
@@ -130,14 +124,6 @@ def process_loan(historyDirty):
                 # last_repayment = {'id': res['resourceId'], 'amount': transaction.amount}
 
 
-    #        elif 'REPAYMENT' in transaction._type:
-    #            data = {
-    #                "locale": LOCALE,
-    #                "dateFormat": DATE_FORMAT,
-    #                "transactionDate": formatDate(transaction.creation),
-    #                "transactionAmount": (Decimal(last_repayment['amount']) + Decimal(transaction.amount)).quantize(Decimal(10) ** -3)
-    #            }
-    #            res = requests.post(API_URL+ '/loans/{}/transactions/{}'.format(loanid, last_repayment['id']), headers=auth_token, json=data, verify=False).json()
 
             errHandle(res, parent, transaction) 
     except Exception as e:
@@ -146,11 +132,6 @@ def process_loan(historyDirty):
         
         
 
-#0: if(l.TYPE='REPAYMENT','REPAYMENT','FEE')
-#1: l.ENCODEDKEY
-#2: l.PARENTACCOUNTKEY
-#3: l.AMOUNT
-#4: l.CREATIONDATE
 class Transaction():
     def __init__(self, _type, key, parent, amount, creation, reversalKey, installments):
         self._type = _type
@@ -169,7 +150,7 @@ class Transaction():
         
 def main():
 
-    with open('testingLoanAccounts.csv') as c, concurrent.futures.ProcessPoolExecutor(max_workers=8) as executor:
+    with open('testingLoanAccounts.csv') as c, concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
         lines = csv.reader(c, delimiter=',', quotechar='"')
         current_parent = ''
         history = []
@@ -193,8 +174,3 @@ def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
             
 if __name__ == "__main__":
     main()
-
-    # hung on 8a18227c4fdca2a8014ffc38344c0535
-    #         8a18227c4fdca2a8014ffc38344c0535
-    #         8a18227c4fdca2a8014ffc3a9a9f059c - line 2696
-    #         8a18227c4fdca2a8014ffc4542ee06d3

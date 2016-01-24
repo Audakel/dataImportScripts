@@ -11,7 +11,7 @@ change senahu in mambu to senahu 1
 Have a for loop fix the `mifostenant-default`.m_holiday_office(holiday_id, office_id) issue
 
 
-FOR MI_GUATAMALA TO FIX
+FOR MI_guatemala TO FIX
 tell gloria to put the staff back in correct offices (out of head)
 fix min/max interst rates
 */
@@ -22,21 +22,32 @@ fix min/max interst rates
 -- DATABASE PREP
 -- ##############
 -- ############################
-
-
--- Change senahu in mambu to senahu 1
--- UPDATE `guatamala1/7`.`branch` SET `ID`='Senahú 1', `NAME`='Senahú 1' WHERE `ENCODEDKEY`='8abc1aea45eb1c2a0145f78a81e45bd8';
-
-
 -- Grab all the offices from Mambu and put into Mifos
+
+-- INSERT INTO `mifostenant-default`.`m_office` VALUES (1,NULL,'.','1','Head Office','2009-01-01');
+
+INSERT INTO `mifostenant-default`.`m_office` 
+	(`parent_id`, `name`, `opening_date`) 
+VALUE (1,'OFFICE TBD', current_date())
+; 
+
+
 INSERT INTO 
 	`mifostenant-default`.`m_office` (`parent_id`, `external_id`, `name`, `opening_date`) 
 SELECT 
-	1, ID, ID, CREATIONDATE 
+	1, ID, name, CREATIONDATE 
 FROM 
-	`guatamala1/7`.branch 
+	`guatemala`.branch 
 ;    
 
+
+UPDATE 
+	`mifostenant-default`.`m_office` 
+SET 
+	`opening_date`= (SELECT CREATIONDATE FROM guatemala.client ORDER BY CREATIONDATE ASC LIMIT 1)
+WHERE 
+	`id`<>''; 
+ ;
 
 
 -- Fix the hierarchy issue in Mifos
@@ -59,15 +70,30 @@ where
 ;
 
 
--- INSERT INTO 
-	-- your_table (ID, ISO3, TEXT) SELECT ID, 'JPN', TEXT FROM your_table WHERE ID IN ( list_of_ ids )
-
-
-
+INSERT INTO `mifostenant-default`.`m_group` 
+	(
+		`status_enum`, `activation_date`, `office_id`, `staff_id`, `level_id`, 
+		`display_name`, `activatedon_userid`, `submittedon_date`, `submittedon_userid`
+    ) 
+SELECT 
+    300									 as status_enum,
+    DATE_FORMAT(date(
+		b.CREATIONDATE), '%Y-%m-%d') 	 as ACTIVATION_DATE,
+	mo.ID								 as OFFICE_ID, 
+    1	                                 as STAFF_ID,							
+    1									 as level_id,
+    'CENTER TBD'						 as DISPLAY_NAME,
+    1									 as activatedon_userid,
+    DATE_FORMAT(date(
+		b.CREATIONDATE), '%Y-%m-%d') 	 as submittedon_date,
+	1									 as submittedon_userid
+    
+;    
 -- Open up Interest Rates
 UPDATE `mifostenant-default`.`m_product_loan` 
 SET `min_nominal_interest_rate_per_period`='0', `max_nominal_interest_rate_per_period`='80' 
 WHERE `id`<>'';
+
 
 
 -- Clean up loan names
@@ -80,39 +106,23 @@ UPDATE `mifostenant-default`.`m_product_loan` SET `name`='Credito Grupal Interes
 UPDATE `mifostenant-default`.`m_product_loan` SET `name`='Crédito Individual' WHERE `id`='6';
 UPDATE `mifostenant-default`.`m_product_loan` SET `name`='Crédito Invidividual Intereses Capitalizables' WHERE `id`='8';
 
-
-UPDATE `guatamala1/7`.`client` SET FIRSTNAME = REPLACE(FIRSTNAME, ',', ' ') LIMIT 60000;
-UPDATE `guatamala1/7`.`client` SET MIDDLENAME = REPLACE(MIDDLENAME, ',', ' ')LIMIT 60000;
-UPDATE `guatamala1/7`.`client` SET LASTNAME = REPLACE(LASTNAME, ',', ' ')LIMIT 60000;
-UPDATE `guatamala1/7`.`user` SET `LASTNAME`='M' WHERE `ENCODEDKEY`='8a9c49fd49f3bb6e014a0c71dcdb11f2';
-UPDATE `guatamala1/7`.`user` SET `FIRSTNAME`='Maria', `LASTNAME`='del Carmen Lara' WHERE `ENCODEDKEY`='8abc1aea45eb1c2a0145f783d6925b67';
-
+UPDATE `guatemala`.`client` SET FIRSTNAME = REPLACE(FIRSTNAME, ',', ' ') LIMIT 60000;
+UPDATE `guatemala`.`client` SET MIDDLENAME = REPLACE(MIDDLENAME, ',', ' ')LIMIT 60000;
+UPDATE `guatemala`.`client` SET LASTNAME = REPLACE(LASTNAME, ',', ' ')LIMIT 60000;
+UPDATE `guatemala`.`user` SET `LASTNAME`='M' WHERE `ENCODEDKEY`='8a9c49fd49f3bb6e014a0c71dcdb11f2';
+UPDATE `guatemala`.`user` SET `FIRSTNAME`='Maria', `LASTNAME`='del Carmen Lara' WHERE `ENCODEDKEY`='8abc1aea45eb1c2a0145f783d6925b67';
 
 
 -- m_staff
-INSERT INTO 
-	`mifostenant-default`.`m_staff` 
-	(`is_loan_officer`, `office_id`, `firstname`, `lastname`, `display_name`) 
-SELECT 
-	1, 1, firstname, lastname, concat(lastname,", ",FIRSTNAME) as displayname 
-FROM 
-	`guatamala1/7`.user 
-where 
-	lastname <> "" -- To get rid of non people staff - some are just region names
-	and firstname <> "Chiantla"
-    and firstname <> "Tecpan"
-    and firstname <> "Mambu"
-    and firstname <> "API"
-    and firstname <> "Cole"
-;
-
-
 -- Clean up Mifos Staff -> change geo locatoin to 'STAFF TBD' 
+
+
 UPDATE 
-	`guatamala1/7`.`user` 
+	`guatemala`.`user` 
 SET 
-	`FIRSTNAME`='STAFF',
-    `LASTNAME`='TBD'
+	-- `FIRSTNAME`='STAFF',
+    `LASTNAME`='(TBD)'
+    -- `id` = 42069
 WHERE 
 	lastname = "" -- To get rid of non people staff - some are just region names
 	OR firstname = "Chiantla"
@@ -120,8 +130,9 @@ WHERE
     OR firstname = "Mambu"
     OR firstname = "API"
     OR firstname = "Cole"
-limit 50
+limit 500
 ;
+
 
 -- Put all the default TBD stuff in
 INSERT INTO `mifostenant-default`.`m_staff` 
@@ -129,27 +140,30 @@ INSERT INTO `mifostenant-default`.`m_staff`
 values (1, 1, 'STAFF', 'TBD', 'STAFF TBD')
 ;
 
+-- Put all the default TBD stuff in
+INSERT INTO 
+	`mifostenant-default`.`m_staff` 
+	(`is_loan_officer`, `office_id`, `firstname`, `lastname`, `display_name`,`external_id`) 
+SELECT 
+	1, 1, firstname, lastname, concat(lastname,", ",FIRSTNAME) as displayname, ENCODEDKEY 
+FROM 
+	`guatemala`.user 
 /*
-INSERT INTO `mifostenant-default`.`m_group` -- CENTER
-	(`id`, `status_enum`, `activation_date`, `office_id`, `level_id`, `display_name`, `hierarchy`, `activatedon_userid`, `submittedon_date`, `submittedon_userid`, `account_no`) 
-VALUES ('1', '300', DATE_SUB(current_date(), INTERVAL 10 YEAR), '1', '1', 'CENTER TBD', '.1.', '1', DATE_SUB(current_date(), INTERVAL 10 YEAR), '1', '000000001');
+where 
+ 	lastname <> "" -- To get rid of non people staff - some are just region names
+  	and firstname <> "Chiantla"
+    and firstname <> "Tecpan"
+    and firstname <> "Mambu"
+    and firstname <> "API"
+    and firstname <> "Cole"
 */
-
-INSERT INTO `mifostenant-default`.`m_office` 
-	(`parent_id`, `name`, `opening_date`) 
-VALUE (1,'OFFICE TBD', DATE_SUB(current_date(), INTERVAL 10 YEAR))
-;    
-
-UPDATE `mifostenant-default`.`m_office` 
-SET `hierarchy`= concat('.', id, '.') 
-WHERE `name` = 'OFFICE TBD'
-LIMIT 1
+group by displayname
 ;
-    
+
 
 INSERT INTO `mifostenant-default`.`m_payment_type` 
-(`id`, `value`, `description`, `is_cash_payment`, `order_position`) 
-VALUES ('1', 'Migration', 'H Migration', '0', '1');
+( `value`, `description`, `is_cash_payment`, `order_position`) 
+VALUES ( 'Migration', 'H Migration', '0', '1');
 
 
 -- ############################
@@ -160,67 +174,53 @@ VALUES ('1', 'Migration', 'H Migration', '0', '1');
 
 
 
--- ---------------
--- Staff Migration
--- ---------------
-/*
- Need to not delete people from m-appuser table
-*/
-
-
-
-
-
-
--- ----------------
--- Update office start dates
--- ----------------
-/*
-Add 'OFFICE TBD'
-Change 'Senahu' to 'Senahu 1'
-*/
-
-
-
-
 -- ----------------
 -- Client Migration
 -- ----------------
 /*
-Make sure to import date as DMY
-Add default STAFF_TBD for null staff
-change the staff Maria del Carmen Lara in mambu and split into first and last name
-Date back office opening 10 years to prevent client activation date conflicts
-Change Senahu -> Senahu 1
+
 */
-select 
-	c.FIRSTNAME                      as FIRST_NAME, 
-    c.LASTNAME                       as LAST_NAME, 
-    COALESCE(c.MIDDLENAME, '')       as MIDDLE_NAME, 
-    COALESCE((replace(rtrim((ifnull(
-		b2.id, b.id))), ' ', '_')),  
-        'OFFICE_TBD')				 as OFFICE_NAME, 
-        
-    COALESCE((CONCAT(
-		s.FIRSTNAME, ' ', s.LASTNAME
-	)), 'STAFF TBD') 				 as STAFF_NAME, 
-    c.ID                             as EXTERNAL_ID,
+ALTER TABLE `mifostenant-default`.`m_client` 
+CHANGE COLUMN `account_no` `account_no` VARCHAR(20) NULL ,
+DROP INDEX `account_no_UNIQUE` ;
+
+
+INSERT INTO `mifostenant-default`.`m_client` 
+	(
+		`external_id`, `status_enum`, `activation_date`, `office_id`, `staff_id`, 
+		`firstname`, `middlename`, `lastname`, `display_name`, `submittedon_userid`, 
+		`activatedon_userid`
+    ) 
+SELECT 
+    c.encodedkey                     as EXTERNAL_ID,
+    300							 	 as status_enum,
     DATE_FORMAT(date(LEAST(
 		coalesce(c.CREATIONDATE, CURDATE()),
         coalesce(c.APPROVEDDATE, CURDATE()),
         coalesce(c.ACTIVATIONDATE, CURDATE()),
         coalesce(lad.DISBURSEMENTDATE, CURDATE())
-	)), '%d/%m/%Y')                  as ACTIVATION_DATE,
-    'TRUE'                           as ACTIVE
+	)), '%Y-%m-%d')                  as ACTIVATION_DATE,
+	ifnull(o.id, 2)					 as OFFICE_ID, 
+	COALESCE(ms.id , 1) 			 as STAFF_ID, 
+	c.FIRSTNAME                      as FIRST_NAME, 
+    c.LASTNAME                       as LAST_NAME, 
+    COALESCE(c.MIDDLENAME, '')       as MIDDLE_NAME,
+    concat(c.FIRSTNAME, ' ', 
+		COALESCE(c.MIDDLENAME, ''), ' ',
+        c.LASTNAME)					 as DISPLAY_NAME,
+	1 								 as submittedon_userid,
+    1 								 as activatedon_userid
 from 
-	client c
-	left join branch b on c.ASSIGNEDBRANCHKEY = b.ENCODEDKEY
-	left join user s   on c.ASSIGNEDUSERKEY   = s.ENCODEDKEY
+	guatemala.client c
+	left join guatemala.branch b on c.ASSIGNEDBRANCHKEY = b.ENCODEDKEY
+    left join `mifostenant-default`.m_office o on o.external_id = b.id
+	left join guatemala.user s   on c.ASSIGNEDUSERKEY   = s.ENCODEDKEY
+    left join `mifostenant-default`.m_staff ms on s.id = ms.external_id
     left join
     (
 		SELECT * FROM (
 			SELECT DISBURSEMENTDATE, ACCOUNTHOLDERKEY, ACCOUNTHOLDERTYPE
-			FROM loanaccount
+			FROM guatemala.loanaccount
 			WHERE ACCOUNTHOLDERTYPE = 'CLIENT'
 			ORDER BY DISBURSEMENTDATE asc
 		) as t1
@@ -228,11 +228,24 @@ from
     ) lad on c.ENCODEDKEY = lad.ACCOUNTHOLDERKEY
     
         -- Get the correct office for the group and give that to the client
-    left join groupmember gm on gm.clientkey = c.encodedkey 
-	left join `group` g on g.ENCODEDKEY = gm.groupkey
-	left join centre cn on cn.ENCODEDKEY = g.ASSIGNEDCENTREKEY
-	left join branch b2 on cn.ASSIGNEDBRANCHKEY = b2.ENCODEDKEY
+    left join guatemala.groupmember gm on gm.clientkey = c.encodedkey 
+	left join guatemala.`group` g on g.ENCODEDKEY = gm.groupkey
+	left join guatemala.centre cn on cn.ENCODEDKEY = g.ASSIGNEDCENTREKEY
+	left join guatemala.branch b2 on cn.ASSIGNEDBRANCHKEY = b2.ENCODEDKEY
 ;
+
+-- fix a few things
+update `mifostenant-default`.m_client
+set 
+	account_no = ID,
+    office_joining_date = activation_date,
+    submittedon_date = activation_date
+where id <> ''
+;
+
+ALTER TABLE `mifostenant-default`.`m_client` 
+CHANGE COLUMN `account_no` `account_no` VARCHAR(20) NOT NULL ,
+ADD UNIQUE INDEX `account_no_UNIQUE` (`account_no` ASC);
 
 
 -- ----------------
@@ -243,32 +256,64 @@ from
 N.B. that 'STAFF TBD' is inserted for Mifos STAFF_NAME 
 	because Mambu does not have staff associated with Centers
 */
-SELECT * from branch;
+SELECT * from guatemala.branch;
+SELECT * from guatemala.centre;
+SELECT * from `mifostenant-default`.m_group;
 
+
+INSERT INTO `mifostenant-default`.`m_group` 
+	(
+		`external_id`, `status_enum`, `activation_date`, `office_id`, `staff_id`, `level_id`, 
+		`display_name`, `activatedon_userid`, `submittedon_date`, `submittedon_userid`
+    ) 
 SELECT 
-	concat('CENTER TBD',
-		'(', b.id, ')')             	 as CENTER_NAME,
-    replace(rtrim(b.ID), ' ', '_')       as OFFICE_NAME, 
-    'STAFF TBD'                          as STAFF_NAME,
-    ''		                             as EXTERNAL_ID,
-    'True'                               as ACTIVE,
-	DATE_FORMAT(date(b.CREATIONDATE), '%d/%m/%Y') as ACTIVATION_DATE
-from branch as b
-UNION
-select -- DISTINCT
-	centre.id                          	 as CENTER_NAME,
-    replace(rtrim(b.ID), ' ', '_')       as OFFICE_NAME, 
-    'STAFF TBD'                          as STAFF_NAME,
-    centre.ID                            as EXTERNAL_ID,
-    'True'                               as ACTIVE,
-	DATE_FORMAT(date(centre.CREATIONDATE), '%d/%m/%Y') as ACTIVATION_DATE
+	b.encodedkey						 as external_id,
+    300									 as status_enum,
+    DATE_FORMAT(date(
+		b.CREATIONDATE), '%Y-%m-%d') 	 as ACTIVATION_DATE,
+	mo.ID								 as OFFICE_ID, 
+    1	                                 as STAFF_ID,							
+    1									 as level_id,
+    concat('CENTER TBD','(', b.id, ')')  as DISPLAY_NAME,
+    1									 as activatedon_userid,
+    DATE_FORMAT(date(
+		b.CREATIONDATE), '%Y-%m-%d') 	 as submittedon_date,
+	1									 as submittedon_userid
 from 
-	centre
-	left join branch as b on b.ENCODEDKEY = centre.ASSIGNEDBRANCHKEY
+	guatemala.branch b
+left join
+    `mifostenant-default`.m_office mo on mo.external_id = b.id
+UNION
+select 
+    c.ENCODEDKEY                         as external_id,
+	300									 as status_enum,
+	DATE_FORMAT(date(
+	   c.CREATIONDATE), '%Y-%m-%d') 	 as ACTIVATION_DATE,
+	mo.id						         as OFFICE_ID,
+    1	                                 as STAFF_ID,							
+    1									 as level_id,
+    c.id 	                         	 as DISPLAY_NAME,
+    1									 as activatedon_userid,
+	DATE_FORMAT(date(
+	   c.CREATIONDATE), '%Y-%m-%d') 	 as submittedon_date,
+	1									 as submittedon_userid
+from 
+	guatemala.centre c 
+left join guatemala.branch b on b.ENCODEDKEY = c.ASSIGNEDBRANCHKEY
+left join `mifostenant-default`.m_office mo on mo.external_id = b.id
 ;
-
+-- hierarchy, account_no
+-- Fix the hierarchy issue in Mifos
+UPDATE 
+	`mifostenant-default`.`m_group` 
+SET 
+	`hierarchy`= concat('.', id, '.'),
+    account_no = id
+WHERE 
+	`id`<>1;
+    
 -- ----------------
--- Group Migration
+-- Group Migration (988)
 -- ----------------
 /*
 Migrate Groups
@@ -290,6 +335,91 @@ Migrate Groups
 		6) Drag down to get all the needed rows and columns
         7) Copy paste (special paste as value) the names back into the upload sheet
 */
+-- SELECT * From `mifostenant-default`.`m_group`;
+-- select * from guatemala.`group` group by groupname;
+
+update guatemala.`group` 
+set groupname = concat(GROUPNAME, ' (', id, ')')
+where id in
+(
+    SELECT id
+	FROM (select * from guatemala.`group`) as groupid
+	GROUP BY groupname
+	HAVING COUNT(*) > 1
+)
+limit 10000
+;
+
+INSERT INTO `mifostenant-default`.`m_group` 
+	(
+		`external_id`, `status_enum`, `activation_date`, `office_id`, `staff_id`, `level_id`, `parent_id`, 
+		`display_name`, `activatedon_userid`, `submittedon_userid`
+    ) ;
+SELECT 
+    g.ENCODEDKEY                         as external_id,
+	300									 as status_enum,
+	DATE_FORMAT(date(LEAST(
+		coalesce(g.CREATIONDATE, CURDATE()),
+        coalesce(lad.DISBURSEMENTDATE, CURDATE())
+	)), '%Y-%m-%d')                      as ACTIVATION_DATE,
+	mo.id						         as OFFICE_ID,
+    ms.id	                             as STAFF_ID,							
+    2									 as level_id,
+	coalesce(mc.id, 1) 					 as parentd_id,
+    g.groupname 	                     as DISPLAY_NAME,
+    1									 as activatedon_userid,
+	1									 as submittedon_userid
+from 
+	guatemala.`group` g 
+left join `mifostenant-default`.m_staff ms on ms.external_id = g.ASSIGNEDUSERKEY
+left join `mifostenant-default`.m_group mc on mc.external_id = g.ASSIGNEDCENTREKEY
+left join guatemala.branch b on b.ENCODEDKEY = g.ASSIGNEDBRANCHKEY
+left join `mifostenant-default`.m_office mo on mo.external_id = b.id
+
+left join
+(
+	SELECT * FROM (
+		SELECT DISBURSEMENTDATE, ACCOUNTHOLDERKEY, ACCOUNTHOLDERTYPE
+		FROM loanaccount
+		WHERE ACCOUNTHOLDERTYPE = 'GROUP'
+		ORDER BY DISBURSEMENTDATE asc
+	) as t1
+	GROUP BY ACCOUNTHOLDERKEY
+) lad on g.ENCODEDKEY = lad.ACCOUNTHOLDERKEY
+group by
+	g.encodedkey
+;
+
+SELECT * from `mifostenant-default`.m_group;
+
+-- Fix a few things
+UPDATE 
+	`mifostenant-default`.`m_group` 
+SET 
+	`hierarchy`= concat('.', id, '.'),
+    account_no = id,
+    submittedon_date = activation_date
+WHERE 
+	`level_id` = 2;
+    
+    
+-- change back to Group.id after filling up groups
+INSERT INTO `mifostenant-default`.m_group_client
+	(`group_id`, `client_id`)
+SELECT 
+	mg.id		as group_id, 
+    mc.id		as client_id 
+FROM 
+	guatemala.groupmember gm
+left join `mifostenant-default`.m_group mg on mg.external_id = gm.groupkey
+left join `mifostenant-default`.m_client mc on mc.external_id = gm.clientkey
+;
+
+
+
+
+/* 
+-- THIS IS THE API WAY
 
 select DISTINCT 
 	g.groupname                      as GROUP_NAME,
@@ -343,7 +473,7 @@ group by
 
 ;
 SELECT * from `group` where ASSIGNEDCENTREKEY is null;
-
+*/
 
 -- ##################################
 -- end
@@ -377,7 +507,11 @@ You may have to add the fund id, payment id, by hand
 change all the interest rates
 chagne all the product names to match
 */
+
+select  id, REPAYMENTINSTALLMENTS, REPAYMENTPERIODCOUNT, REPAYMENTPERIODUNIT from loanaccount where encodedkey = '8a36219649e44d120149e8c4c86f50fa';
+
  select
+	
     replace(rtrim(b.NAME), ' ', '_') 						as OFFICE_NAME, 
     'Group'													as LOAN_TYPE,
     g.GROUPNAME 											as GROUP_NAME,
@@ -394,10 +528,10 @@ chagne all the product names to match
     if (la.REPAYMENTPERIODCOUNT is null or la.REPAYMENTPERIODCOUNT = 0, 
 		'1', la.REPAYMENTPERIODCOUNT)						as 'REPAID',
     if (la.REPAYMENTPERIODCOUNT is null or la.REPAYMENTPERIODCOUNT = 0, 
-		'Months', 'Days') 									as 'RPUNIT',
+		'Months', 'Months') 									as 'RPUNIT',
     la.REPAYMENTINSTALLMENTS 								as 'TERM',
     if (la.REPAYMENTPERIODCOUNT is null or la.REPAYMENTPERIODCOUNT = 0, 
-		'Months', 'Days') 									as 'LTUNIT',
+		'Months', 'Months') 									as 'LTUNIT',
     if (la.INTERESTCHARGEFREQUENCY = 'EVERY_FOUR_WEEKS', 
 		ROUND(la.INTERESTRATE * 13 / 12, 6), la.INTERESTRATE) as 'NOMINAL',
     if (la.INTERESTCHARGEFREQUENCY = 'EVERY_MONTH', 'Per Month', 
@@ -417,7 +551,7 @@ where
 	AND lp.ENCODEDKEY = la.PRODUCTTYPEKEY
 	AND b.ENCODEDKEY = la.ASSIGNEDBRANCHKEY
 	AND la.ACCOUNTHOLDERTYPE = 'GROUP'
--- AND b.NAME = 'Pasig'
+-- AND b.NAME = 'guatemala'
 ;
 
 
@@ -429,7 +563,7 @@ where
 select id, external_id, firstname, lastname from `mifostenant-default`.m_client;
 
 SELECT 
- 
+
     replace(rtrim(b.NAME), ' ', '_') 						as OFFICE_NAME, 
     'Individual'											as LOAN_TYPE,
     CONCAT(c.firstname, ' ', 
@@ -450,10 +584,10 @@ SELECT
     if (la.REPAYMENTPERIODCOUNT is null or la.REPAYMENTPERIODCOUNT = 0, 
 		'1', la.REPAYMENTPERIODCOUNT)						as 'REPAID',
     if (la.REPAYMENTPERIODCOUNT is null or la.REPAYMENTPERIODCOUNT = 0, 
-		'Months', 'Days') 									as 'RPUNIT',
+		'Months', 'Months') 									as 'RPUNIT',
     la.REPAYMENTINSTALLMENTS 								as 'TERM',
     if (la.REPAYMENTPERIODCOUNT is null or la.REPAYMENTPERIODCOUNT = 0, 
-		'Months', 'Days') 									as 'LTUNIT',
+		'Months', 'Months') 									as 'LTUNIT',
     if (la.INTERESTCHARGEFREQUENCY = 'EVERY_FOUR_WEEKS', 
 		ROUND(la.INTERESTRATE * 13 / 12, 6), la.INTERESTRATE) as 'NOMINAL',
     if (la.INTERESTCHARGEFREQUENCY = 'EVERY_MONTH', 'Per Month', 
@@ -473,6 +607,116 @@ where
 	AND la.ASSIGNEDBRANCHKEY =b.ENCODEDKEY
     AND la.ACCOUNTHOLDERKEY = c.ENCODEDKEY
     AND la.ACCOUNTHOLDERTYPE = 'CLIENT'
--- AND b.NAME = 'Pasig'
+-- AND b.NAME = 'guatemala'
 ;
+
+-- 8a10ca994b09d039014b174acc784cc0
+select ENCODEDKEY, type, REVERSALTRANSACTIONKEY from guatemala.loantransaction where REVERSALTRANSACTIONKEY is not null;
+-- TIPT945
+
+SELECT 
+	lt.parentaccountkey
+from 
+	guatemala.loantransaction lt
+group by lt.parentaccountkey
+order by (count(lt.parentaccountkey)) desc 
+limit 10
+;
+
+
+SELECT * from guatemala.loantransaction where `type` = 'DISBURSMENT';
+SELECT * from guatemala.loanaccount;
+
+
+select 
+	lt.TYPE,
+	lt.ENCODEDKEY,
+    lt.PARENTACCOUNTKEY,
+    lt.AMOUNT,
+    DATE_FORMAT(date(lt.CREATIONDATE), '%d/%m/%Y') as date,
+    ifnull(lt.REVERSALTRANSACTIONKEY,'') as reversalKey,
+    la.REPAYMENTINSTALLMENTS
+from 
+	guatemala.loantransaction lt,
+    guatemala.loanaccount la
+where 
+	lt.parentaccountkey = la.encodedkey
+    and la.ENCODEDKEY = lt.PARENTACCOUNTKEY
+    and lt.type not like '%INTEREST%'
+    -- la.ACCOUNTSTATE like '%CLOSED%'
+	-- la.accountholdertype = 'GROUP'
+	-- lt.parentaccountkey= '8a9d7e284b75fe4b014b7a05572a0b1b' or
+	-- lt.parentaccountkey= '8a9c4d8c4c2a3654014c2da9018a6e9e' or
+	-- lt.parentaccountkey= '8a36219649e44d120149e8c4c86f50fa' or
+	-- lt.parentaccountkey= '8a9d992d4c1acee0014c2ed7d6cb14ad' or
+	-- lt.parentaccountkey= '8a10d7894b2f253a014b317dcb8e0e0d' or
+	-- lt.parentaccountkey= '8a9c4d8c4c2a3654014c2d8dd19c45ec' or
+	-- lt.parentaccountkey= '8aa85edc4ae70c4a014aefac6cbf5b03' or
+	-- closed
+	-- lt.parentaccountkey= '8a9d992d4c1acee0014c2ed7d6cb14ad' or
+	-- lt.parentaccountkey= '8a36219649e44d120149e8c4c86f50fa' or
+	-- lt.parentaccountkey= '8a8188ae51f3d72d0151f90675461d5f'
+order by lt.parentaccountkey asc, lt.creationdate asc
+ ;
+
+
+
+SELECT * from 
+SELECT * from guatemala.loanaccount where ENCODEDKEY = '8a9c4d8c4c2a3654014c2da9018a6e9e';
+SELECT * from guatemala.loanaccount where ACCOUNTSTATE like '%CLOSED%';
+
+select lt.type, count(lt.type), round(max(lt.amount)) as max, round(min(lt.amount)) as min, la.ACCOUNTHOLDERTYPE, la.ACCOUNTSTATE 
+	from (guatemala.loantransaction lt, guatemala.loanaccount la)
+    where la.ENCODEDKEY = lt.PARENTACCOUNTKEY and
+    la.accountholdertype = 'CLIENT'
+    group by type;
+
+
+
+/* 
+	Grab all mambu loan schedules and dump them into a CSV to import
+	through python script
+*/
+
+SELECT 
+	PARENTACCOUNTKEY,
+    PRINCIPALDUE,
+    INTERESTDUE,
+    FEESDUE,
+    DATE_FORMAT(date(DUEDATE), '%Y-%m-%d') as date
+from guatemala.repayment
+order by PARENTACCOUNTKEY, DUEDATE 
+;
+
+
+/* 
+	Grab all fee info
+*/
+
+SELECT 
+	la.ID,
+	lt.`TYPE`,
+    fa.AMOUNT as pdf_amt,
+    lt.AMOUNT as lt_amt,
+    if((lt.AMOUNT < 0), lt.AMOUNT, fa.AMOUNT) as real_amt,
+    la.REPAYMENTINSTALLMENTS,
+    lt.REVERSALTRANSACTIONKEY,
+    fa.LOANPREDEFINEDFEEAMOUNTS_ENCODEDKEY_OWN,
+    lt.PARENTACCOUNTKEY
+FROM 
+	guatemala.predefinedfeeamount fa,
+    guatemala.loantransaction lt,
+    guatemala.loanaccount la
+    -- guatemala.repayment r
+where
+	fa.LOANPREDEFINEDFEEAMOUNTS_ENCODEDKEY_OWN = lt.ENCODEDKEY
+    and la.ENCODEDKEY = lt.PARENTACCOUNTKEY
+    and lt.`type` = 'FEE'
+order by lt.PARENTACCOUNTKEY, lt.CREATIONDATE	
+;
+
+select * from guatemala.repayment;
+select * from guatemala.loantransaction where PARENTACCOUNTKEY = '8a10ca994b09d039014b0e1d85e56713';
+select * from guatemala.loanaccount where REPAYMENTINSTALLMENTS = 1;
+select * from guatemala.predefinedfeeamount;
 

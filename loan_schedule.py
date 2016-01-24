@@ -95,7 +95,7 @@ cnx = ''
 if __name__ == '__main__':
     try:
         cnx = mysql.connector.connect(
-            user='root', password='password',
+            user='root', password='mysql',
             host='localhost',
             database='mifostenant-default'
         )
