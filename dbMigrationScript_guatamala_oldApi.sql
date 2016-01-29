@@ -1,3 +1,22 @@
+/* General Errors
+ "groupId:The parameter groupId must be greater than 0.	"
+  "id:The date on which a loan is submitted cannot be earlier than groups's activation date.	"
+"loanTermFrequency:The parameter loanTermFrequency is less than the suggest loan term as indicated by numberOfRepayments and repaymentEvery.	"
+"id:Loan product with identifier 0 does not exist	"
+
+
+General TODO
+change senahu in mambu to senahu 1
+
+Have a for loop fix the `mifostenant-default`.m_holiday_office(holiday_id, office_id) issue
+
+
+FOR MI_guatemala TO FIX
+tell gloria to put the staff back in correct offices (out of head)
+fix min/max interst rates
+*/
+
+
 -- ############################
 -- ##############
 -- DATABASE PREP
@@ -6,7 +25,7 @@
 -- Grab all the offices from Mambu and put into Mifos
 
 -- INSERT INTO `mifostenant-default`.`m_office` VALUES (1,NULL,'.','1','Head Office','2009-01-01');
-
+s
 
 INSERT INTO `mifostenant-default`.`m_fund` VALUES (1,'Mentors International',NULL),(2,'doTERRA',NULL);
 INSERT INTO `mifostenant-default`.`m_organisation_currency` VALUES (26,'GTQ',2,NULL,'Guatemala Quetzal','Q','currency.GTQ');
@@ -20,7 +39,7 @@ VALUE (1,'OFFICE TBD', current_date())
 INSERT INTO 
 	`mifostenant-default`.`m_office` (`parent_id`, `external_id`, `name`, `opening_date`) 
 SELECT 
-	1, ENCODEDKEY, name, CREATIONDATE 
+	1, ID, name, CREATIONDATE 
 FROM 
 	`guatemala`.branch 
 ;    
@@ -55,6 +74,15 @@ where
 ;
 
 
+  
+/*  
+-- Open up Interest Rates
+UPDATE `mifostenant-default`.`m_product_loan` 
+SET `min_nominal_interest_rate_per_period`='0', `max_nominal_interest_rate_per_period`='80' 
+WHERE `id`<>'';
+*/
+
+
 -- Clean up loan names
 UPDATE `mifostenant-default`.`m_product_loan` SET `name`='Credito Grupal 2.5%' WHERE `id`='2';
 UPDATE `mifostenant-default`.`m_product_loan` SET `name`='Crédito Individual Nueva Tasa' WHERE `id`='7';
@@ -84,6 +112,8 @@ UPDATE `mifostenant-default`.`m_product_loan` SET `external_id`='8a28acc84601431
 
 -- m_staff
 -- Clean up Mifos Staff -> change geo locatoin to 'STAFF TBD' 
+
+
 UPDATE 
 	`guatemala`.`user` 
 SET 
@@ -153,11 +183,13 @@ VALUES
 -- ############################
 
 
--- ----------------------------------------------------------------------------------------------------
--- ----------------------------------------------------------------------------------------------------
+
+-- ----------------
 -- Client Migration
--- ----------------------------------------------------------------------------------------------------
--- ----------------------------------------------------------------------------------------------------
+-- ----------------
+/*
+
+*/
 ALTER TABLE `mifostenant-default`.`m_client` 
 CHANGE COLUMN `account_no` `account_no` VARCHAR(20) NULL ,
 DROP INDEX `account_no_UNIQUE` ;
@@ -212,6 +244,7 @@ from
 	left join guatemala.branch b2 on cn.ASSIGNEDBRANCHKEY = b2.ENCODEDKEY
 ;
 
+
 -- fix a few things
 update `mifostenant-default`.m_client
 set 
@@ -227,11 +260,15 @@ CHANGE COLUMN `account_no` `account_no` VARCHAR(20) NOT NULL ,
 ADD UNIQUE INDEX `account_no_UNIQUE` (`account_no` ASC);
 
 
--- ----------------------------------------------------------------------------------------------------
--- ----------------------------------------------------------------------------------------------------
+-- ----------------
 -- Center Migration
--- ----------------------------------------------------------------------------------------------------
--- ----------------------------------------------------------------------------------------------------
+-- ----------------
+
+/*
+N.B. that 'STAFF TBD' is inserted for Mifos STAFF_NAME 
+	because Mambu does not have staff associated with Centers
+*/
+
 INSERT INTO `mifostenant-default`.`m_group` 
 	(
 		`external_id`, `status_enum`, `activation_date`, `office_id`, `staff_id`, `level_id`, 
@@ -242,7 +279,7 @@ SELECT
     300									 as status_enum,
     DATE_FORMAT(date(
 		b.CREATIONDATE), '%Y-%m-%d') 	 as ACTIVATION_DATE,
-	1									 as OFFICE_ID, 
+	mo.ID								 as OFFICE_ID, 
     1	                                 as STAFF_ID,							
     1									 as level_id,
     concat('CENTER TBD','(', b.id, ')')  as DISPLAY_NAME,
@@ -271,7 +308,7 @@ select
 from 
 	guatemala.centre c 
 left join guatemala.branch b on b.ENCODEDKEY = c.ASSIGNEDBRANCHKEY
-left join `mifostenant-default`.m_office mo on mo.external_id = b.encodedkey
+left join `mifostenant-default`.m_office mo on mo.external_id = b.id
 ;
 
 
@@ -283,15 +320,34 @@ SET
 	`hierarchy`= concat('.', id, '.'),
     account_no = id
 WHERE 
-	`id`<>'';
+	`id`<>1;
     
-    
-    
--- ----------------------------------------------------------------------------------------------------
--- ----------------------------------------------------------------------------------------------------
+-- ----------------
 -- Group Migration (988)
--- ----------------------------------------------------------------------------------------------------
--- ----------------------------------------------------------------------------------------------------
+-- ----------------
+/*
+Migrate Groups
+	- LOOK FOR N/A
+	- add CENTER TBD
+    - change all the center names to get rid of location names
+    - 'Jessica Gabriela Cabrera Ocoix, de pin' has a comma in it that messes things up
+	- have to split clients on comma in excel right now. highlight column -> click data tab -> text to column
+	- to get client names with id
+		1) Highlight and copy columns with client name and id from clients tab (upload sheet)
+        2) Make new tab and paste data into column a and b
+        3) Insert row between a and b and put this into it: 
+			=LEFT(A1,FIND("(",A1)-1)
+        4) highlight range to end of names, ctr + d to copy formula down
+        3) Highlight and copy columns with group names from export sheet
+        4) Paste into col e (leaves one col for space)
+        5) If the largest group size is 3, add on col for space and insert in the next col:
+			=IF(E1="","",CONCATENATE(E1,"(",(VLOOKUP(E1,$B$1:$C$3315,2,)),")"))
+		6) Drag down to get all the needed rows and columns
+        7) Copy paste (special paste as value) the names back into the upload sheet
+*/
+-- SELECT * From `mifostenant-default`.`m_group`;
+-- select * from guatemala.`group` group by groupname;
+
 update guatemala.`group` 
 set groupname = concat(GROUPNAME, ' (', id, ')')
 where id in
@@ -328,7 +384,7 @@ from
 left join `mifostenant-default`.m_staff ms on ms.external_id = g.ASSIGNEDUSERKEY
 left join `mifostenant-default`.m_group mc on mc.external_id = g.ASSIGNEDCENTREKEY
 left join guatemala.branch b on b.ENCODEDKEY = g.ASSIGNEDBRANCHKEY
-left join `mifostenant-default`.m_office mo on mo.external_id = b.encodedkey
+left join `mifostenant-default`.m_office mo on mo.external_id = b.id
 left join
 (
 	SELECT * FROM (
@@ -342,6 +398,9 @@ left join
 group by
 	g.encodedkey
 ;
+
+SELECT * from `mifostenant-default`.m_group;
+SELECT * from guatemala.`group`;
 
 
 
@@ -370,13 +429,80 @@ left join `mifostenant-default`.m_client mc on mc.external_id = gm.clientkey
 ;
 
 
+/* 
+-- THIS IS THE API WAY
+
+select DISTINCT 
+	g.groupname                      as GROUP_NAME,
+ 	replace(rtrim(b.ID), ' ', '_')   as OFFICE_NAME, 
+ 	CONCAT(u.FIRSTNAME, ' ', 
+		COALESCE(NULLIF(u.LASTNAME,''), 
+		u.FIRSTNAME)) 				 as STAFF_NAME, 
+ 	COALESCE(cn.id, 
+		CONCAT('CENTER TBD',
+			'(', b.ID, ')'
+	))							     as CENTER_NAME,
+ 	g.id                             as EXTERNAL_ID,
+ 	'True'                           as ACTIVE, 
+	DATE_FORMAT(date(LEAST(
+		coalesce(g.CREATIONDATE, CURDATE()),
+        coalesce(lad.DISBURSEMENTDATE, CURDATE())
+	)), '%d/%m/%Y')                  as ACTIVATION_DATE,
+ 	""                               as MEETING_START_DATE,
+ 	''                               as REPEAT_FLAG,
+ 	''                               as FREQUENCY,
+ 	''                               as INTERVAL_NUM,
+ 	''                               as REPEATS_ON,
+ 	'','','',
+
+	ifnull(GROUP_CONCAT( DISTINCT 
+		CONCAT(
+			c.firstname, ' ', 
+			if(c.MIDDLENAME IS NULL OR c.MIDDLENAME = '', '', concat(c.MIDDLENAME, ' ')),
+			c.lastname 
+		) SEPARATOR ','), "") 
+	as clientsC 
+	
+from `group` g 
+	left join groupmember gm on g.ENCODEDKEY  = gm.groupkey
+	left join `client` c     on gm.clientkey  = c.encodedkey
+	left join centre cn      on cn.ENCODEDKEY = g.ASSIGNEDCENTREKEY
+	left join branch b       on b.ENCODEDKEY  = g.ASSIGNEDBRANCHKEY
+	left join user u         on u.ENCODEDKEY  = g.ASSIGNEDUSERKEY
+    left join
+    (
+		SELECT * FROM (
+			SELECT DISBURSEMENTDATE, ACCOUNTHOLDERKEY, ACCOUNTHOLDERTYPE
+			FROM loanaccount
+			WHERE ACCOUNTHOLDERTYPE = 'GROUP'
+			ORDER BY DISBURSEMENTDATE asc
+		) as t1
+		GROUP BY ACCOUNTHOLDERKEY
+    ) lad on g.ENCODEDKEY = lad.ACCOUNTHOLDERKEY
+group by
+	g.encodedkey
+
+;
+SELECT * from `group` where ASSIGNEDCENTREKEY is null;
+*/
+
+-- ##################################
+-- end
+-- ##################################
 
 
--- ----------------------------------------------------------------------------------------------------
--- ----------------------------------------------------------------------------------------------------
+-- --------------------
 -- Group Loan Migration
--- ----------------------------------------------------------------------------------------------------
--- ----------------------------------------------------------------------------------------------------
+
+-- --------------------
+SELECT INTERESTBALANCE, INTERESTPAID, INTERESTRATE, INTERESTDUE from guatemala.loanaccount;
+
+SELECT * from guatemala.loanaccount;
+SELECT * from `mifostenant-default`.m_loan_transaction;
+SELECT * from `mifostenant-default-api`.m_loan where client_id is not null;
+SELECT * from `mifostenant-default`.`m_loan` ;
+
+
 ALTER TABLE `mifostenant-default`.`m_loan` 
 CHANGE COLUMN `account_no` `account_no` VARCHAR(20) NULL DEFAULT NULL ,
 DROP INDEX `loan_account_no_UNIQUE` ;
@@ -479,11 +605,16 @@ where
 	la.ACCOUNTHOLDERTYPE = 'GROUP'
 ;
 
+SELECT * FROM `mifostenant-default`.m_loan;
+select * from guatemala.loanaccount where ; -- 8a10c7ed49c563400149c9844bfd2ff9
+SELECT ENCODEDKEY from guatemala.`group`;
+select external_id from `mifostenant-default`.m_staff;
+SELECT * from `mifostenant-default`.m_product_loan;
+SELECT ENCODEDKEY, PRODUCTNAME from guatemala.loanproduct;
 
 -- NEED TO ADD AT TTHE END OF THIS CALL!!!!
 -- `total_expected_repayment_derived`, `total_expected_costofloan_derived`, `total_outstanding_derived`, account_no
 -- Fix a few things
-/*
 UPDATE 
 	`mifostenant-default`.`m_loan` 
 SET 
@@ -493,15 +624,16 @@ SET
     total_outstanding_derived = (principal_amount + interest_charged_derived)
 WHERE 
 	id <> '';
-*/    
     
     
-    
--- ----------------------------------------------------------------------------------------------------
--- ----------------------------------------------------------------------------------------------------
+
+-- -----------------------------------------------
+-- -----------------------------------------------
 -- INDIVIDUAL LOANS
--- ----------------------------------------------------------------------------------------------------
--- ----------------------------------------------------------------------------------------------------
+-- -----------------------------------------------    
+-- -----------------------------------------------   
+
+ 
 INSERT INTO `mifostenant-default`.m_loan 
 ( 
 	`external_id`, `client_id`, `product_id`, `loan_officer_id`,  `principal_amount_proposed`, 
@@ -617,82 +749,135 @@ CHANGE COLUMN `account_no` `account_no` VARCHAR(20) NOT NULL ,
 ADD UNIQUE INDEX `account_no_UNIQUE` (`account_no` ASC);
 
 
+/*
+Some of the groups did not get migrated as the where not found
+You may have to add the office Senahu's groups by hand - err with DataImportTool
+Make all days workign days in mifos - then change back
+You may have to add the fund id, payment id, by hand
+change all the interest rates
+chagne all the product names to match
+*/
 
--- ----------------------------------------------------------------------------------------------------
--- ----------------------------------------------------------------------------------------------------
--- LOAN DISBURSEMENT TRANSACTIONS
--- ----------------------------------------------------------------------------------------------------
--- ----------------------------------------------------------------------------------------------------
+select  id, REPAYMENTINSTALLMENTS, REPAYMENTPERIODCOUNT, REPAYMENTPERIODUNIT from loanaccount where encodedkey = '8a36219649e44d120149e8c4c86f50fa';
+/*
+-- DATAIMPORT TOOL WAY
+select
+    replace(rtrim(b.NAME), ' ', '_') 						as OFFICE_NAME, 
+    'Group'													as LOAN_TYPE,
+    g.GROUPNAME 											as GROUP_NAME,
+	replace(rtrim(CONCAT(UCASE(LEFT(
+		lp.PRODUCTNAME, 1)), 
+		SUBSTRING(lp.PRODUCTNAME, 2))), ' ', '_') 			as LOAN_PRODUCT,
+    CONCAT(u.FIRSTNAME, ' ', u.LASTNAME) 					as STAFF_NAME,
+    date(la.DISBURSEMENTDATE) 								as SUBMITTED,
+    date(la.DISBURSEMENTDATE) 								as APPROVED,
+    date(la.DISBURSEMENTDATE) 								as DISBURSED,
+    'Migration' as PAYMENTTYPE, 'Mentors International' 		as 'FUND',
+    la.LOANAMOUNT											as PRINCIPAL,
+    la.REPAYMENTINSTALLMENTS									as REPAYMENT_INSTALLMENTS,
+    if (la.REPAYMENTPERIODCOUNT is null or la.REPAYMENTPERIODCOUNT = 0, 
+		'1', la.REPAYMENTPERIODCOUNT)						as 'REPAID',
+    if (la.REPAYMENTPERIODCOUNT is null or la.REPAYMENTPERIODCOUNT = 0, 
+		'Months', 'Months') 									as 'RPUNIT',
+    la.REPAYMENTINSTALLMENTS 								as 'TERM',
+    if (la.REPAYMENTPERIODCOUNT is null or la.REPAYMENTPERIODCOUNT = 0, 
+		'Months', 'Months') 									as 'LTUNIT',
+    if (la.INTERESTCHARGEFREQUENCY = 'EVERY_FOUR_WEEKS', 
+		ROUND(la.INTERESTRATE * 13 / 12, 6), la.INTERESTRATE) as 'NOMINAL',
+    if (la.INTERESTCHARGEFREQUENCY = 'EVERY_MONTH', 'Per Month', 
+		if (la.INTERESTCHARGEFREQUENCY = 'EVERY_FOUR_WEEKS', 
+			'Per Month', 'Per Year')) 						as 'FREQUENCY',
+    'Equal installments' 									as 'AMORTIZATION',
+    'Flat' as 'INTEREST',
+    'Same as repayment period', 
+        '0', 'Mifos Style', '0', '0', '0',
+    '','','','','','','','',la.ENCODEDKEY
 
-INSERT INTO `mifostenant-default`.`m_loan_transaction`
- (
-	`loan_id`,  `office_id`,  `amount`, `outstanding_loan_balance_derived`,`is_reversed`, `transaction_type_enum`, 
-	`appuser_id`, `manually_adjusted_or_reversed`, `transaction_date`,`submitted_on_date`, `created_date`
- ) 
+from (loanaccount la, user u, loanproduct lp, branch b, `group` g)
+where 
+    la.ACCOUNTHOLDERKEY = g.ENCODEDKEY
+	AND u.ENCODEDKEY = la.ASSIGNEDUSERKEY
+-- AND centre.ENCODEDKEY = la.ASSIGNEDCENTREKEY
+	AND lp.ENCODEDKEY = la.PRODUCTTYPEKEY
+	AND b.ENCODEDKEY = la.ASSIGNEDBRANCHKEY
+	AND la.ACCOUNTHOLDERTYPE = 'GROUP'
+-- AND b.NAME = 'guatemala'
+;
+*/
+
+
+
+-- -------------------------
+-- Individual Loan Migration
+-- -------------------------
+select id, external_id, firstname, lastname from `mifostenant-default`.m_client;
 
 SELECT 
-	ml.id											as `loan_id`, 
-    ifnull(mo.id,2)									as `office_id`, 
-    ml.principal_outstanding_derived				as `amount`, 
-	ml.principal_outstanding_derived				as `outstanding_loan_balance_derived`,
-	0												as `is_reversed`, 
-    1												as `transaction_type_enum`, 
-	1												as `appuser_id`,
-    0												as `manually_adjusted_or_reversed`, 
-    ifnull(ml.disbursedon_date,	
-		DATE_SUB(curdate(), INTERVAL 10 YEAR))		as `transaction_date`,
-	ifnull(ml.disbursedon_date,	
-		DATE_SUB(curdate(), INTERVAL 10 YEAR))		as `submitted_on_date`, 
-	ifnull(ml.disbursedon_date,	
-		DATE_SUB(curdate(), INTERVAL 10 YEAR))		as `created_date` 
+
+    replace(rtrim(b.NAME), ' ', '_') 						as OFFICE_NAME, 
+    'Individual'											as LOAN_TYPE,
+    CONCAT(c.firstname, ' ', 
+		if(c.middlename is NULL OR c.middlename = '', 
+			'', CONCAT(c.middlename, ' ')), 
+		c.lastname) 										as `NAME`,
+	replace(rtrim(CONCAT(UCASE(LEFT(
+		lp.PRODUCTNAME, 1)), 
+		SUBSTRING(lp.PRODUCTNAME, 2))), ' ', '_') 			as LOAN_PRODUCT,
+    CONCAT(u.FIRSTNAME, ' ', u.LASTNAME) 					as STAFF_NAME,
+    date(la.DISBURSEMENTDATE) 								as SUBMITTED,
+    date(la.DISBURSEMENTDATE) 								as APPROVED,
+    date(la.DISBURSEMENTDATE) 								as DISBURSED,
+    'Migration' 											as PAYMENTTYPE, 
+    'Mentors International' 								as 'FUND',
+    la.LOANAMOUNT											as PRINCIPAL,
+    la.REPAYMENTINSTALLMENTS								as REPAYMENT_INSTALLMENTS,
+    if (la.REPAYMENTPERIODCOUNT is null or la.REPAYMENTPERIODCOUNT = 0, 
+		'1', la.REPAYMENTPERIODCOUNT)						as 'REPAID',
+    if (la.REPAYMENTPERIODCOUNT is null or la.REPAYMENTPERIODCOUNT = 0, 
+		'Months', 'Months') 									as 'RPUNIT',
+    la.REPAYMENTINSTALLMENTS 								as 'TERM',
+    if (la.REPAYMENTPERIODCOUNT is null or la.REPAYMENTPERIODCOUNT = 0, 
+		'Months', 'Months') 									as 'LTUNIT',
+    if (la.INTERESTCHARGEFREQUENCY = 'EVERY_FOUR_WEEKS', 
+		ROUND(la.INTERESTRATE * 13 / 12, 6), la.INTERESTRATE) as 'NOMINAL',
+    if (la.INTERESTCHARGEFREQUENCY = 'EVERY_MONTH', 'Per Month', 
+		if (la.INTERESTCHARGEFREQUENCY = 'EVERY_FOUR_WEEKS', 
+			'Per Month', 'Per Year')) 						as 'FREQUENCY',
+    'Equal installments' 									as 'AMORTIZATION',
+    'Flat' 													as 'INTEREST',
+    'Same as repayment period'								as INTEREST_CALC_PERIOD, 
+        '0', 'Mifos Style', '0', '0', '0',
+    '','','','','','','','',la.ENCODEDKEY
+
 from 
-	`mifostenant-default`.m_loan ml
-left join guatemala.loanaccount gla on ml.external_id = gla.encodedkey
-left join `mifostenant-default`.m_office mo on gla.assignedbranchkey = mo.external_id
+	(loanaccount la, user u, loanproduct lp, `client` c, branch b)
+where 
+	u.ENCODEDKEY = la.ASSIGNEDUSERKEY
+	AND la.PRODUCTTYPEKEY = lp.ENCODEDKEY
+	AND la.ASSIGNEDBRANCHKEY =b.ENCODEDKEY
+    AND la.ACCOUNTHOLDERKEY = c.ENCODEDKEY
+    AND la.ACCOUNTHOLDERTYPE = 'CLIENT'
+-- AND b.NAME = 'guatemala'
 ;
--- 	could add `payment_detail_id` with a script
 
-
-
--- ----------------------------------------------------------------------------------------------------
--- ----------------------------------------------------------------------------------------------------
--- INTEREST TRANSACTIONS
--- ----------------------------------------------------------------------------------------------------
--- ----------------------------------------------------------------------------------------------------
-INSERT INTO `mifostenant-default`.`m_loan_transaction`
- (
-	`loan_id`,  `office_id`,  `amount`, `interest_portion_derived`,`is_reversed`, `transaction_type_enum`, 
-	`appuser_id`, `manually_adjusted_or_reversed`, `transaction_date`,`submitted_on_date`, `created_date`
- ) 
+-- 8a10ca994b09d039014b174acc784cc0
+select ENCODEDKEY, type, REVERSALTRANSACTIONKEY from guatemala.loantransaction where REVERSALTRANSACTIONKEY is not null;
+-- TIPT945
 
 SELECT 
-	ml.id											as `loan_id`, 
-    ifnull(mo.id,2)									as `office_id`, 
-    ml.interest_charged_derived						as `amount`, 
-	ml.interest_charged_derived						as `interest_portion_derived`,
-	0												as `is_reversed`, 
-    10												as `transaction_type_enum`, 
-	1												as `appuser_id`,
-    0												as `manually_adjusted_or_reversed`, 
-    ifnull(ml.disbursedon_date,	
-		DATE_SUB(curdate(), INTERVAL 10 YEAR))		as `transaction_date`,
-	ifnull(ml.disbursedon_date,	
-		DATE_SUB(curdate(), INTERVAL 10 YEAR))		as `submitted_on_date`, 
-	ifnull(ml.disbursedon_date,	
-		DATE_SUB(curdate(), INTERVAL 10 YEAR))		as `created_date` 
+	lt.parentaccountkey
 from 
-	`mifostenant-default`.m_loan ml
-left join guatemala.loanaccount gla on ml.external_id = gla.encodedkey
-left join `mifostenant-default`.m_office mo on gla.assignedbranchkey = mo.external_id
+	guatemala.loantransaction lt
+group by lt.parentaccountkey
+order by (count(lt.parentaccountkey)) desc 
+limit 10
 ;
 
 
+SELECT * from guatemala.loantransaction where `type` = 'DISBURSMENT';
+SELECT * from guatemala.loanaccount;
 
--- ----------------------------------------------------------------------------------------------------
--- ----------------------------------------------------------------------------------------------------
--- FEES
--- ----------------------------------------------------------------------------------------------------
--- ----------------------------------------------------------------------------------------------------
+
 select 
 	lt.TYPE,
 	lt.ENCODEDKEY,
@@ -738,11 +923,10 @@ select lt.type, count(lt.type), round(max(lt.amount)) as max, round(min(lt.amoun
 
 
 
--- ----------------------------------------------------------------------------------------------------
--- ----------------------------------------------------------------------------------------------------
--- LOAN SCHEDULE UPDATE
--- ----------------------------------------------------------------------------------------------------
--- ----------------------------------------------------------------------------------------------------
+/* 
+	Grab all mambu loan schedules and dump them into a CSV to import
+	through python script
+*/
 SELECT 
 	PARENTACCOUNTKEY,
     PRINCIPALDUE,
@@ -754,13 +938,9 @@ order by PARENTACCOUNTKEY, DUEDATE
 ;
 
 
-
-
--- ----------------------------------------------------------------------------------------------------
--- ----------------------------------------------------------------------------------------------------
--- ?
--- ----------------------------------------------------------------------------------------------------
--- ----------------------------------------------------------------------------------------------------
+/* 
+	Grab all fee info
+*/
 SELECT 
 	la.ID,
 	lt.`TYPE`,

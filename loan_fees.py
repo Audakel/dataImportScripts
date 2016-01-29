@@ -80,8 +80,7 @@ def process_loan(historyDirty):
             print("\n\t\t\tCan't find key: %s " % parent)
             return
         
-        pid = os.getpid()
-        print('PID', pid, 'starting parent loan', parent)
+        # pid = os.getpid()
         history = cleanHistory(historyDirty)
         fees = extract_fee_sum(history)
 
@@ -94,12 +93,11 @@ def process_loan(historyDirty):
                 "chargeId": "3"
             }
             res = requests.post(API_URL + '/loans/{}/charges'.format(loanid), headers=auth_token, json=data, verify=False, timeout=10).json()
-            errHandle(res, parent)
-
-            errHandle(res, parent, transaction) 
     except Exception as e:
-        print('wee woo we ded', e)
-    print('PID', pid, 'ending parent loan', parent)
+        print('\nexception: ', e)
+        return
+    print('.', end="")
+    # sys.stdout.flush()
         
 
 class Transaction():
