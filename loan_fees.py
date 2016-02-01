@@ -118,7 +118,7 @@ class Transaction():
 
 
 def main():
-    with open('testingLoanAccounts.csv') as c, concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
+    with open('fees.csv') as c, concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
         lines = csv.reader(c, delimiter=',', quotechar='"')
         current_parent = ''
         history = []

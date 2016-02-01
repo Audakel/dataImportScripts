@@ -48,22 +48,23 @@ def errHandle(res, parent, transaction=''):
     #global err_count
     #total_count += 1
     return
-    if 'errors' in res.keys():
-        #err_count += 1
-        print('\n******************************')
-        print(res)
-        print()
-        print('Mambu Loan Key: {}'.format(parent))
-        print(transaction)
-        #print('Errors :{} - Total: {} | {}'.format(err_count, total_count, ((total_count-err_count)/total_count) * 100))
-        print('******************************\n')
-        sys.stdout.flush()
-    else:
-        if transaction:
-            print('.', end="")
-            sys.stdout.flush()
-        else:
-            print('fee')
+    # if 'errors' in res.keys():
+    #     #err_count += 1
+    #     print('\n******************************')
+    #     print(res)
+    #     print()
+    #     print('Mambu Loan Key: {}'.format(parent))
+    #     print(transaction)
+    #     #print('Errors :{} - Total: {} | {}'.format(err_count, total_count, ((total_count-err_count)/total_count) * 100))
+    #     print('******************************\n')
+    #     sys.stdout.flush()
+    # else:
+    #     if transaction:
+    #         print('.', end="")
+    #         sys.stdout.flush()
+    #     else:
+    #         print('fee')
+
 
 def handle_repayment(transaction):
    pass
@@ -91,20 +92,7 @@ def process_loan(historyDirty):
         pid = os.getpid()
         print('PID', pid, 'starting parent loan', parent)
         history = cleanHistory(historyDirty)
-        fees = extract_fee_sum(history)
 
-        if not isclose(fees['amount'], 0):
-            data = {
-                "locale": LOCALE,
-                "dateFormat": DATE_FORMAT,
-                "amount": fees['amount'] / fees['installments'],
-                "dueDate": formatDate(fees['date']),
-                "chargeId": "3"
-            }
-            res = requests.post(API_URL + '/loans/{}/charges'.format(loanid), headers=auth_token, json=data, verify=False, timeout=10).json()
-            errHandle(res, parent)
-
-        return
 
         transactions = extract_other(history)
         # transactions = history
@@ -150,7 +138,7 @@ class Transaction():
         
 def main():
 
-    with open('testingLoanAccounts.csv') as c, concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
+    with open('transactions.csv') as c, concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
         lines = csv.reader(c, delimiter=',', quotechar='"')
         current_parent = ''
         history = []

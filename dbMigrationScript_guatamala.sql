@@ -3,7 +3,19 @@
 -- DATABASE PREP
 -- ##############
 -- ############################
--- Grab all the offices from Mambu and put into Mifos
+
+
+-- --------------------------------------------------------------------------------------------------------------
+-- TODO
+-- --------------------------------------------------------------------------------------------------------------
+/*
+	Fix anual interst rate on m_loan
+    Fix fromdate in m_loan_repayment_schedule - currently just null
+*/
+
+
+
+
 
 -- INSERT INTO `mifostenant-default`.`m_office` VALUES (1,NULL,'.','1','Head Office','2009-01-01');
 
@@ -743,16 +755,59 @@ select lt.type, count(lt.type), round(max(lt.amount)) as max, round(min(lt.amoun
 -- LOAN SCHEDULE UPDATE
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
+
+INSERT INTO `mifostenant-default`.`m_loan_repayment_schedule` 
+(
+	`loan_id`, `duedate`, `principal_amount`, 
+	`interest_amount`, `completed_derived`, `createdby_id`,
+	`created_date`, `lastmodified_date`, `lastmodifiedby_id`, `recalculated_interest_component`
+ , `installment`
+ ) 
+ 
 SELECT 
-	PARENTACCOUNTKEY,
-    PRINCIPALDUE,
-    INTERESTDUE,
-    FEESDUE,
-    DATE_FORMAT(date(DUEDATE), '%Y-%m-%d') as date
-from guatemala.repayment
-order by PARENTACCOUNTKEY, DUEDATE 
+	ml.id 											as loan_id, 
+    DATE_FORMAT(date(gr.DUEDATE), '%Y-%m-%d') 		as duedate, 
+    gr.PRINCIPALDUE 								as principal_amount, 
+    gr.INTERESTDUE								 	as interest_amount, 
+	0 												as completed_derived, 
+    1 												as createdby_id,
+	current_timestamp() 							as created_date, 
+    current_timestamp() 							as lastmodified_date, 
+    1 												as lastmodifiedby_id, 
+    0 												as recalculated_interest_component
+    
+from 
+	guatemala.repayment gr
+LEFT JOIN 
+	`mifostenant-default`.m_loan ml on ml.external_id = gr.PARENTACCOUNTKEY
+order by 
+	loan_id, duedate 
 ;
 
+
+CREATE TEMPORARY TABLE IF NOT EXISTS table2 AS (
+SELECT id, loan_id as l, duedate as d, 
+(
+select COUNT(*) + 1 from  `mifostenant-default`.`m_loan_repayment_schedule`
+
+where loan_id = l
+and duedate < d
+) as c 
+FROM `mifostenant-default`.`m_loan_repayment_schedule`
+
+group by id
+);
+
+UPDATE `mifostenant-default`.`m_loan_repayment_schedule`
+JOIN table2 t2 on t2.id = `mifostenant-default`.`m_loan_repayment_schedule`.id
+SET installment = t2.c
+where m_loan_repayment_schedule.created_date <> ''
+;
+
+
+
+SELECT * from `mifostenant-default-api`.m_loan_repayment_schedule;
+SELECT * from guatemala.repayment;
 
 
 
