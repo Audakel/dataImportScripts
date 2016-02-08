@@ -5,23 +5,24 @@ import sys
 import requests
 import csv
 import simplejson as json
+# import json
 import os
+import pdb
 requests.packages.urllib3.disable_warnings()
-
 BASE_URL = 'https://localhost:8443'
-API_URL = BASE_URL + '/mifosng-provider/api/v1'
+API_URL = BASE_URL + '/fineract-provider/api/v1'
 auth_token = {}
-auth_token["X-Mifos-Platform-TenantId"] = 'default'
-auth_res = requests.post(API_URL + '/authentication?username=mifos&password=password', headers=auth_token, verify=False).json()
+auth_token["Fineract-Platform-TenantId"] = 'default'
+auth_res = requests.post(API_URL + '/authentication?username=mifos&password=password', 
+		headers=auth_token, verify=False).json()
+
 auth_token["Authorization"] = "Basic %s" %auth_res['base64EncodedAuthenticationKey']
-err_count = 0
-total_count = 0
-loans = requests.get(API_URL + '/loans?limit=0', headers=auth_token, verify=False).json()
-loans = {l['externalId']: l['id'] for l in loans['pageItems']}
+# loans = requests.get(API_URL + '/loans?limit=0', headers=auth_token, verify=False).json()
+# pdb.set_trace()
+# loans = {l['externalId']: l['id'] for l in loans['pageItems']}
 disbursement_fees = []
 DATE_FORMAT = "dd MMMM yyyy"
 LOCALE = "en"
-
 
 def formatDate(date):
     return datetime.strftime(datetime.strptime(date, '%d/%m/%Y'), '%d %B %Y')
@@ -75,7 +76,7 @@ def process_loan(historyDirty):
 
         parent = historyDirty[0].parent
         try:
-            loanid = loans[parent] # look up mifos id with externalId
+            loanid = historyDirty[0].mifos_id # look up mifos id with externalId
         except KeyError as e:
             print("\n\t\t\tCan't find key: %s " % parent)
             return
@@ -101,7 +102,7 @@ def process_loan(historyDirty):
         
 
 class Transaction():
-    def __init__(self, _type, key, parent, amount, creation, reversalKey, installments):
+    def __init__(self, _type, key, parent, amount, creation, reversalKey, installments, mifos_id):
         self._type = _type
         self.key = key
         self.parent = parent
@@ -109,6 +110,7 @@ class Transaction():
         self.creation = creation
         self.reversalKey = reversalKey
         self.installments = installments
+        self.mifos_id = mifos_id
     def __str__(self):
         return '{}, {}, {}, {}, {}, {}'.format(self._type, self.key,  self.parent, self.amount, self.creation, self.reversalKey, self.installments)
     def __repr__(self):
