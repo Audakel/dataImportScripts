@@ -408,7 +408,7 @@ INSERT INTO `mifostenant-default`.m_loan
 	`principal_writtenoff_derived`,`interest_repaid_derived`, `interest_waived_derived`,  `interest_writtenoff_derived`,`fee_charges_charged_derived`, 
 	`fee_charges_repaid_derived`,`fee_charges_waived_derived`,`fee_charges_writtenoff_derived`, `fee_charges_outstanding_derived`, `penalty_charges_charged_derived`,
 	`penalty_charges_repaid_derived`, `penalty_charges_waived_derived`,`penalty_charges_writtenoff_derived`, `penalty_charges_outstanding_derived`, 
-	`total_waived_derived`, `total_writtenoff_derived`, `total_costofloan_derived`, `loan_transaction_strategy_id`, `is_npa`, `days_in_year_enum`,  
+	`total_waived_derived`, `total_writtenoff_derived`, `total_costofloan_derived`, total_outstanding_derived,`loan_transaction_strategy_id`, `is_npa`, `days_in_year_enum`,  
     `interest_recalculation_enabled`,  `loan_product_counter`, `days_in_month_enum`, `version`
 )
 
@@ -474,6 +474,7 @@ select
 	0 as `total_waived_derived`, 
 	0 as `total_writtenoff_derived`, 
 	0 as `total_costofloan_derived`, 
+      as total_outstanding_derived,
 	1 as `loan_transaction_strategy_id`, 
 	0 as `is_npa`, 
     360 as `days_in_year_enum`,  
@@ -529,7 +530,7 @@ INSERT INTO `mifostenant-default`.m_loan
 	`principal_writtenoff_derived`,`interest_repaid_derived`, `interest_waived_derived`,  `interest_writtenoff_derived`,`fee_charges_charged_derived`, 
 	`fee_charges_repaid_derived`,`fee_charges_waived_derived`,`fee_charges_writtenoff_derived`, `fee_charges_outstanding_derived`, `penalty_charges_charged_derived`,
 	`penalty_charges_repaid_derived`, `penalty_charges_waived_derived`,`penalty_charges_writtenoff_derived`, `penalty_charges_outstanding_derived`, 
-	`total_waived_derived`, `total_writtenoff_derived`, `total_costofloan_derived`, `loan_transaction_strategy_id`, `is_npa`, `days_in_year_enum`,  
+	`total_waived_derived`, `total_writtenoff_derived`, `total_costofloan_derived`, total_outstanding_derived, `loan_transaction_strategy_id`, `is_npa`, `days_in_year_enum`,  
     `interest_recalculation_enabled`,  `loan_product_counter`, `days_in_month_enum`, `version`
 )
 
@@ -595,6 +596,7 @@ select
 	0 as `total_waived_derived`, 
 	0 as `total_writtenoff_derived`, 
 	0 as `total_costofloan_derived`, 
+    la.  as total_outstanding_derived,
 	1 as `loan_transaction_strategy_id`, 
 	0 as `is_npa`, 
     360 as `days_in_year_enum`,  
@@ -618,8 +620,9 @@ UPDATE
 SET 
 	account_no = id,
     total_expected_repayment_derived = (principal_amount + interest_charged_derived),
-    total_expected_costofloan_derived = interest_charged_derived,
-    total_outstanding_derived = (principal_amount + interest_charged_derived)
+    total_expected_costofloan_derived = interest_charged_derived
+    -- ,
+    -- total_outstanding_derived = (principal_amount + interest_charged_derived)
 WHERE 
 	id <> '';
     
@@ -705,21 +708,31 @@ left join `mifostenant-default`.m_office mo on gla.assignedbranchkey = mo.extern
 -- FEES
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
-select 
-	lt.TYPE,
-	lt.ENCODEDKEY,
+
+select * from `mifostenant-default`.m_loan_transaction; -- 5358
+
+select
+    lt.TYPE,
+    lt.ENCODEDKEY,
     lt.PARENTACCOUNTKEY,
     lt.AMOUNT,
     DATE_FORMAT(date(lt.CREATIONDATE), '%d/%m/%Y') as date,
     ifnull(lt.REVERSALTRANSACTIONKEY,'') as reversalKey,
-    la.REPAYMENTINSTALLMENTS
-from 
-	guatemala.loantransaction lt,
-    guatemala.loanaccount la
-where 
-	lt.parentaccountkey = la.encodedkey
+    la.REPAYMENTINSTALLMENTS,
+	ml.id
+from
+    guatemala.loantransaction lt,
+    guatemala.loanaccount la,
+    `mifostenant-default`.m_loan ml
+where
+    lt.parentaccountkey = la.encodedkey
+    and ml.external_id = la.ENCODEDKEY
     and la.ENCODEDKEY = lt.PARENTACCOUNTKEY
     and lt.type not like '%INTEREST%'
+order by lt.parentaccountkey asc, lt.creationdate asc
+ ;
+
+
     -- la.ACCOUNTSTATE like '%CLOSED%'
 	-- la.accountholdertype = 'GROUP'
 	-- lt.parentaccountkey= '8a9d7e284b75fe4b014b7a05572a0b1b' or
@@ -733,8 +746,6 @@ where
 	-- lt.parentaccountkey= '8a9d992d4c1acee0014c2ed7d6cb14ad' or
 	-- lt.parentaccountkey= '8a36219649e44d120149e8c4c86f50fa' or
 	-- lt.parentaccountkey= '8a8188ae51f3d72d0151f90675461d5f'
-order by lt.parentaccountkey asc, lt.creationdate asc
- ;
 
 
 
@@ -756,32 +767,31 @@ select lt.type, count(lt.type), round(max(lt.amount)) as max, round(min(lt.amoun
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
 
-INSERT INTO `mifostenant-default`.`m_loan_repayment_schedule` 
+INSERT INTO `mifostenant-default`.`m_loan_repayment_schedule`
 (
-	`loan_id`, `duedate`, `principal_amount`, 
-	`interest_amount`, `completed_derived`, `createdby_id`,
-	`created_date`, `lastmodified_date`, `lastmodifiedby_id`, `recalculated_interest_component`
- , `installment`
- ) 
- 
-SELECT 
-	ml.id 											as loan_id, 
-    DATE_FORMAT(date(gr.DUEDATE), '%Y-%m-%d') 		as duedate, 
-    gr.PRINCIPALDUE 								as principal_amount, 
-    gr.INTERESTDUE								 	as interest_amount, 
-	0 												as completed_derived, 
-    1 												as createdby_id,
-	current_timestamp() 							as created_date, 
-    current_timestamp() 							as lastmodified_date, 
-    1 												as lastmodifiedby_id, 
-    0 												as recalculated_interest_component
-    
-from 
-	guatemala.repayment gr
-LEFT JOIN 
-	`mifostenant-default`.m_loan ml on ml.external_id = gr.PARENTACCOUNTKEY
-order by 
-	loan_id, duedate 
+    `loan_id`, `duedate`, `principal_amount`,
+    `interest_amount`, `completed_derived`, `createdby_id`,
+    `created_date`, `lastmodified_date`, `lastmodifiedby_id`, `recalculated_interest_component`
+
+ )
+
+SELECT
+	ml.id				                                as loan_id,
+    DATE_FORMAT(date(phr.DUEDATE), '%Y-%m-%d')         	as duedate,
+    phr.PRINCIPALDUE                                 	as principal_amount,
+    phr.INTERESTDUE                                     as interest_amount,
+    0                                                	as completed_derived,
+    1                                                 	as createdby_id,
+    current_timestamp()                             	as created_date,
+    current_timestamp()                             	as lastmodified_date,
+    1                                                 	as lastmodifiedby_id,
+    0                                                 	as recalculated_interest_component
+from
+    guatemala.repayment phr, `mifostenant-default`.m_loan ml
+where
+     ml.external_id = phr.PARENTACCOUNTKEY
+order by
+     phr.PARENTACCOUNTKEY, phr.duedate
 ;
 
 
@@ -843,3 +853,56 @@ select * from guatemala.loantransaction where PARENTACCOUNTKEY = '8a10ca994b09d0
 select * from guatemala.loanaccount where REPAYMENTINSTALLMENTS = 1;
 select * from guatemala.predefinedfeeamount;
 
+
+insert into 
+	`mifostenant-default`.m_loan_transaction 
+	(
+		loan_id,
+		office_id,
+		external_id,
+		transaction_date,
+		amount,
+		submitted_on_date,
+		created_date,
+		appuser_id,
+        transaction_type_enum,
+        outstanding_loan_balance_derived,
+        principal_portion_derived,
+		interest_portion_derived
+	)
+ select 
+	ml.id as loan_id,
+    mo.id as office_id,
+    glt.encodedkey as external_id,
+    glt.entrydate as transaction_date,
+    glt.amount as amount,
+    glt.creationdate as submitted_on_date,
+    glt.creationdate as created_date,
+    1 as appuser_id,
+    2 as transaction_type_enum,
+    glt.balance as outstanding_loan_balance_derived,
+    glt.principalamount as principal_portion_derived,
+    glt.interestamount as interest_amount_derived
+from 
+    guatemala.loantransaction glt,
+	`mifostenant-default`.m_loan ml,
+    `mifostenant-default`.m_office mo
+where
+	glt.PARENTACCOUNTKEY = ml.external_id 
+AND (
+		glt.BRANCHKEY = mo.external_id
+		or glt.BRANCHKEY is null
+    )
+AND glt.type = 'REPAYMENT'
+order by glt.ENTRYDATE, glt.creationdate 
+;
+
+
+update `mifostenant-default`.m_loan
+set ()
+	
+
+
+select * from guatemala.loantransaction where type = 'REPAYMENT'; -- 8023
+select * from guatemala.loantransaction where type = 'REPAYMENT' and BRANCHKEY is null; -- 0
+select * from guatemala.loantransaction where type = 'REPAYMENT' and PARENTACCOUNTKEY is null; -- 0

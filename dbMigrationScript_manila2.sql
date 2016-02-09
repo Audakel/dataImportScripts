@@ -843,3 +843,8 @@ select count(*) from phil20160204.repayment;
 select * from phil20160204.loantransaction where PARENTACCOUNTKEY = '8a10ca994b09d039014b0e1d85e56713';
 select * from phil20160204.loanaccount where REPAYMENTINSTALLMENTS = 1;
 select * from phil20160204.predefinedfeeamount;
+
+/**
+Repayment query
+**/
+

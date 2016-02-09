@@ -10,9 +10,11 @@ import os
 import pdb
 requests.packages.urllib3.disable_warnings()
 BASE_URL = 'https://localhost:8443'
-API_URL = BASE_URL + '/fineract-provider/api/v1'
+#API_URL = BASE_URL + '/fineract-provider/api/v1'
+API_URL = BASE_URL + '/mifosng-provider/api/v1'
 auth_token = {}
-auth_token["Fineract-Platform-TenantId"] = 'default'
+#auth_token["Fineract-Platform-TenantId"] = 'default'
+auth_token["X-Mifos-Platform-TenantId"] = 'default'
 auth_res = requests.post(API_URL + '/authentication?username=mifos&password=password', 
 		headers=auth_token, verify=False).json()
 
