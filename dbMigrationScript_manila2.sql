@@ -16,8 +16,10 @@
     - INSERT INTO `mifostenant-default`.`m_fund` 
     - INSERT INTO `mifostenant-default`.`m_holiday`
     - m_holiday_office
-    `m_organisation_currency` 
-
+    - `m_organisation_currency` 
+    - make a python script to make a temp table to clean up reversal keys - then migrate that table
+    - _derived fields in m_loan such as fees_written_off_derived needs updating, but how do we calculate that?
+    - what do we do about transaction type REPAYMENT_ADJUSTMENT
 */
 
 
@@ -830,6 +832,12 @@ where
     and lt.`type` = 'FEE'
 order by lt.PARENTACCOUNTKEY, lt.CREATIONDATE   
 ;
+
+
+SELECT * from `mifostenant-default`.m_loan_transaction group by transaction_type_enum;
+
+SELECT type, count(*) FROM guatemala.loantransaction group by type;
+SELECT type, count(*) FROM phil20160204.loantransaction group by type;
 
 select count(*) from phil20160204.repayment;
 select * from phil20160204.loantransaction where PARENTACCOUNTKEY = '8a10ca994b09d039014b0e1d85e56713';
