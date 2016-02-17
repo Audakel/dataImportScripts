@@ -9,16 +9,17 @@ import os
 requests.packages.urllib3.disable_warnings()
 
 BASE_URL = 'https://localhost:8443'
-API_URL = BASE_URL + '/mifosng-provider/api/v1'
+API_URL = BASE_URL + '/fineract-provider/api/v1'
 auth_token = {}
-auth_token["X-Mifos-Platform-TenantId"] = 'default'
+auth_token["fineract-Platform-TenantId"] = 'default'
 auth_res = requests.post(API_URL + '/authentication?username=mifos&password=password', headers=auth_token, verify=False).json()
 auth_token["Authorization"] = "Basic %s" %auth_res['base64EncodedAuthenticationKey']
 err_count = 0
 total_count = 0
-loans = requests.get(API_URL + '/loans?limit=0', headers=auth_token, verify=False).json()
 
-loans = {l['externalId']: l['id'] for l in loans['pageItems']}
+# loans = requests.get(API_URL + '/loans?limit=0', headers=auth_token, verify=False).json()
+
+# loans = {l['externalId']: l['id'] for l in loans['pageItems']}
 disbursement_fees = []
 
 DATE_FORMAT = "dd MMMM yyyy"
@@ -71,7 +72,8 @@ def handle_repayment(transaction):
 
 
 def handle_fee(transaction):
-    print('fee')
+    pass
+    # print('fee')
        
             
 def process_loan(historyDirty):
@@ -84,13 +86,13 @@ def process_loan(historyDirty):
 
         parent = historyDirty[0].parent
         try:
-            loanid = loans[parent] # look up mifos id with externalId
+            loanid = historyDirty[0].mifos_id # look up mifos id with externalId
         except KeyError as e:
             print("\n\t\t\tCan't find key: %s " % parent)
             return
         
         pid = os.getpid()
-        print('PID', pid, 'starting parent loan', parent)
+        # print('PID', pid, 'starting parent loan', parent)
         history = cleanHistory(historyDirty)
 
 
@@ -116,12 +118,12 @@ def process_loan(historyDirty):
             errHandle(res, parent, transaction) 
     except Exception as e:
         print('wee woo we ded', e)
-    print('PID', pid, 'ending parent loan', parent)
+    # print('PID', pid, 'ending parent loan', parent)
         
         
 
 class Transaction():
-    def __init__(self, _type, key, parent, amount, creation, reversalKey, installments):
+    def __init__(self, _type, key, parent, amount, creation, reversalKey, installments, mifos_id):
         self._type = _type
         self.key = key
         self.parent = parent
@@ -129,6 +131,7 @@ class Transaction():
         self.creation = creation
         self.reversalKey = reversalKey
         self.installments = installments
+        self.mifos_id = mifos_id    
     def __str__(self):
         return '{}, {}, {}, {}, {}, {}'.format(self._type, self.key,  self.parent, self.amount, self.creation, self.reversalKey, self.installments)
     def __repr__(self):
@@ -138,7 +141,7 @@ class Transaction():
         
 def main():
 
-    with open('transactions.csv') as c, concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
+    with open('transactions.csv') as c, concurrent.futures.ProcessPoolExecutor(max_workers=8) as executor:
         lines = csv.reader(c, delimiter=',', quotechar='"')
         current_parent = ''
         history = []

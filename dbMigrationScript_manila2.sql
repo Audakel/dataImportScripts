@@ -40,14 +40,14 @@ INSERT INTO
 SELECT
     1, ENCODEDKEY, name, CREATIONDATE
 FROM
-    `phil20160204`.branch
+    `input_db`.branch
 ;   
 
 
 UPDATE
     `mifostenant-default`.`m_office`
 SET
-    `opening_date`= (SELECT CREATIONDATE FROM phil20160204.client ORDER BY CREATIONDATE ASC LIMIT 1)
+    `opening_date`= (SELECT CREATIONDATE FROM input_db.client ORDER BY CREATIONDATE ASC LIMIT 1)
 WHERE
     `id`<>'';
  ;
@@ -79,16 +79,16 @@ UPDATE `mifostenant-default`.`m_product_loan` SET `name`='Special Individual Loa
 UPDATE `mifostenant-default`.`m_product_loan` SET `name`='Business Opportunity Loan' WHERE `id`='2';
 
 
-UPDATE `phil20160204`.`client` SET FIRSTNAME = REPLACE(FIRSTNAME, ',', ' ') LIMIT 60000;
-UPDATE `phil20160204`.`client` SET MIDDLENAME = REPLACE(MIDDLENAME, ',', ' ')LIMIT 60000;
-UPDATE `phil20160204`.`client` SET LASTNAME = REPLACE(LASTNAME, ',', ' ')LIMIT 60000;
-UPDATE `phil20160204`.`user` SET `FIRSTNAME`='Roland' WHERE `ENCODEDKEY`='8a28afc7474813a4014757b332b420e5';
+UPDATE `input_db`.`client` SET FIRSTNAME = REPLACE(FIRSTNAME, ',', ' ') LIMIT 60000;
+UPDATE `input_db`.`client` SET MIDDLENAME = REPLACE(MIDDLENAME, ',', ' ')LIMIT 60000;
+UPDATE `input_db`.`client` SET LASTNAME = REPLACE(LASTNAME, ',', ' ')LIMIT 60000;
+UPDATE `input_db`.`user` SET `FIRSTNAME`='Roland' WHERE `ENCODEDKEY`='8a28afc7474813a4014757b332b420e5';
 
 
 -- m_staff
 -- Clean up Mifos Staff -> change geo locatoin to 'STAFF TBD'
 UPDATE
-    `phil20160204`.`user`
+    `input_db`.`user`
 SET
     -- `FIRSTNAME`='STAFF',
     `LASTNAME`='(TBD)'
@@ -117,7 +117,7 @@ INSERT INTO
 SELECT
     1, 1, firstname, lastname, concat(lastname,", ",FIRSTNAME) as displayname, ENCODEDKEY
 FROM
-    `phil20160204`.user
+    `input_db`.user
 /*
 where
      lastname <> "" -- To get rid of non people staff - some are just region names
@@ -155,6 +155,7 @@ INSERT INTO `mifostenant-default`.`m_holiday` VALUES (1,'HOLY WEEK 2008','2008-0
 
 INSERT INTO `mifostenant-default`.`m_product_loan` (  `id`,  `short_name`,  `currency_code`,  `currency_digits`,  `currency_multiplesof`,  `principal_amount`,  `min_principal_amount`,  `max_principal_amount`,  `arrearstolerance_amount`,  `name`,  `description`,  `fund_id`,  `is_linked_to_floating_interest_rates`,  `nominal_interest_rate_per_period`,  `min_nominal_interest_rate_per_period`,  `max_nominal_interest_rate_per_period`,  `interest_period_frequency_enum`,  `annual_nominal_interest_rate`,  `interest_method_enum`,  `interest_calculated_in_period_enum` ,  `repay_every`,  `repayment_period_frequency_enum`,  `number_of_repayments`,  `min_number_of_repayments`,  `max_number_of_repayments`,  `grace_on_principal_periods`,  `grace_on_interest_periods`,  `grace_interest_free_periods`,  `amortization_method_enum`,  `accounting_type`,  `loan_transaction_strategy_id`,  `external_id`,  `include_in_borrower_cycle`,  `use_borrower_cycle`,  `start_date`,  `close_date`,  `allow_multiple_disbursals`,  `max_disbursals`,  `max_outstanding_loan_balance`,  `grace_on_arrears_ageing`,  `overdue_days_for_npa`,  `days_in_month_enum` ,  `days_in_year_enum` ,  `interest_recalculation_enabled`,  `min_days_between_disbursal_and_first_repayment`,  `hold_guarantee_funds`,  `principal_threshold_for_last_installment` ,  `account_moves_out_of_npa_only_on_arrears_completion`,  `can_define_fixed_emi_amount`,  `instalment_amount_in_multiples_of`) VALUES (1,'GL','PHP',0,0,5000.000000,1000.000000,75000.000000,NULL,'General Loan','Intended for business use only',NULL,'\0',4.333333,4.333333,4.333333,2,51.999996,1,1,1,1,25,9,65,NULL,NULL,NULL,1,1,6,NULL,1,0,NULL,NULL,0,NULL,NULL,0,121,1,1,0,3,0,0.00,0,1,NULL),(2,'BOL','PHP',0,0,5000.000000,1000.000000,5000.000000,0.000000,'Business Loan',NULL,NULL,'\0',7.236667,7.236667,7.236667,2,86.840000,1,1,1,1,12,2,15,NULL,NULL,NULL,1,1,1,NULL,1,0,NULL,NULL,0,NULL,NULL,0,121,1,1,0,3,0,0.00,0,1,NULL),(3,'MPL','PHP',0,0,5000.000000,1000.000000,30000.000000,NULL,'Multi-Purpose Loan',NULL,NULL,'\0',4.333333,4.333333,4.333333,2,52.000000,1,1,1,1,25,20,35,NULL,NULL,NULL,1,1,1,NULL,1,0,NULL,NULL,0,NULL,NULL,0,121,1,1,0,NULL,0,0.00,0,0,NULL),(4,'HUL','PHP',0,0,10000.000000,1000.000000,30000.000000,NULL,'Housing and Utility Loan',NULL,NULL,'\0',2.166667,2.166667,2.166667,2,26.000000,1,1,1,1,50,20,65,NULL,NULL,NULL,1,1,1,NULL,1,0,NULL,NULL,0,NULL,NULL,0,121,1,1,0,3,0,0.00,0,0,NULL),(5,'IL','PHP',0,0,5000.000000,5000.000000,10000.000000,NULL,'Individual Loan',NULL,NULL,'\0',4.333333,4.333333,4.333333,2,52.000000,1,1,1,1,50,25,50,NULL,NULL,NULL,1,1,1,NULL,1,0,NULL,NULL,0,NULL,NULL,0,121,1,1,0,NULL,0,0.00,0,1,NULL),(6,'IL2','PHP',0,0,20000.000000,20000.000000,150000.000000,NULL,'Individual Loan 2',NULL,NULL,'\0',3.250000,3.250000,3.250000,2,39.000000,1,1,1,1,25,12,50,NULL,NULL,NULL,1,1,1,NULL,0,0,NULL,NULL,0,NULL,NULL,0,121,1,1,0,3,0,0.00,0,1,NULL),(7,'GFL','PHP',0,0,1000.000000,500.000000,10000.000000,NULL,'Group Fund Loan',NULL,NULL,'\0',0.000000,0.000000,0.000000,2,0.000000,1,1,1,1,12,1,12,NULL,NULL,NULL,1,1,1,NULL,0,0,NULL,NULL,0,NULL,NULL,0,121,1,1,0,3,0,0.00,0,1,NULL),(8,'CFLA','PHP',0,0,3000.000000,3000.000000,3000.000000,NULL,'Center Fund Loan Assistance',NULL,NULL,'\0',0.000000,0.000000,0.000000,2,0.000000,1,1,1,1,12,12,50,NULL,NULL,NULL,1,1,1,NULL,0,0,NULL,NULL,0,NULL,NULL,0,121,1,1,0,3,0,0.00,0,0,NULL);
 INSERT INTO `mifostenant-default`.`m_savings_product` (  `id` ,  `name`,  `short_name`,  `description`,  `deposit_type_enum`,  `currency_code` ,  `currency_digits`,  `currency_multiplesof`,  `nominal_annual_interest_rate`,  `interest_compounding_period_enum`,  `interest_posting_period_enum` ,  `interest_calculation_type_enum`,  `interest_calculation_days_in_year_type_enum`,  `min_required_opening_balance` ,  `lockin_period_frequency` ,  `lockin_period_frequency_enum`,  `accounting_type` ,  `withdrawal_fee_amount`,  `withdrawal_fee_type_enum`,  `withdrawal_fee_for_transfer`,  `allow_overdraft` ,  `overdraft_limit` ,  `min_required_balance`,  `enforce_min_required_balance`,  `min_balance_for_interest_calculation`) VALUES (1,'GF 5%','GF 5','Deduction on every General Loan',100,'PHP',0,0,0.000000,1,4,1,365,50.000000,NULL,NULL,1,NULL,NULL,0,0,NULL,NULL,0,NULL),(2,'Personal Savings','PS','Personal Savings of Clients',100,'PHP',0,0,0.000000,1,5,1,365,50.000000,NULL,NULL,1,NULL,NULL,0,0,0.000000,0.000000,0,1000.000000),(3,'GF Weekly','GFW','GF Savings of Clients',100,'PHP',0,0,0.000000,1,4,1,365,30.000000,NULL,NULL,1,NULL,NULL,0,0,0.000000,0.000000,0,NULL),(4,'Dayong','D','Client Death Benefit',100,'PHP',0,0,0.000000,1,4,1,365,10.000000,NULL,NULL,1,NULL,NULL,0,0,0.000000,0.000000,0,NULL),(5,'Other Fees','Fees','Service Fees',100,'PHP',0,0,0.000000,1,4,1,365,75.000000,NULL,NULL,1,NULL,NULL,0,0,0.000000,0.000000,0,NULL),(6,'Center Fund','CF','Funds use within the center',100,'PHP',0,0,0.000000,1,4,1,365,1.000000,NULL,NULL,1,NULL,NULL,0,0,0.000000,0.000000,0,NULL),(7,'CF 1%','CF1%','Deducted on every Loan Disbursement',100,'PHP',0,0,0.000000,1,4,1,365,50.000000,NULL,NULL,1,NULL,NULL,0,0,0.000000,0.000000,0,NULL),(8,'CF Proceeds','CFP','Used when Center Closure Occurs',100,'PHP',0,0,0.000000,1,4,1,365,10.000000,NULL,NULL,1,NULL,NULL,0,0,0.000000,0.000000,0,NULL),(9,'Dropout Proceeds','DP','Proceeds of Clients GF5% after exit.',100,'PHP',0,0,0.000000,1,4,1,365,10.000000,NULL,NULL,1,NULL,NULL,0,0,0.000000,0.000000,0,NULL),(10,'Security Deposit','SD','Compulsary Savings',100,'PHP',0,0,0.000000,1,4,1,365,5.000000,NULL,NULL,1,NULL,NULL,0,0,0.000000,0.000000,0,NULL);
+INSERT INTO `mifostenant-default`.`m_charge` (`id`, `name`, `currency_code`, `charge_applies_to_enum`, `charge_time_enum`, `charge_calculation_enum`, `charge_payment_mode_enum`, `amount`, `is_penalty`, `is_active`, `is_deleted`) VALUES ('3', 'General', 'PHP', '1', '8', '1', '0', '1.000000', '0', '1', '0');
 
 UPDATE `mifostenant-default`.`m_product_loan` SET `external_id`='8a5cfa8345d40fb80145db5380773d37' WHERE `id`='2';
 UPDATE `mifostenant-default`.`m_product_loan` SET `external_id`='8a9d39cd46a57d740146a6741c601c86' WHERE `id`='8';
@@ -164,6 +165,15 @@ UPDATE `mifostenant-default`.`m_product_loan` SET `external_id`='8a5cfa8345d40fb
 UPDATE `mifostenant-default`.`m_product_loan` SET `external_id`='8a28acc84601431f01460367c59337d7' WHERE `id`='5';
 UPDATE `mifostenant-default`.`m_product_loan` SET `external_id`='8a28acc84601431f0146036b4d353828' WHERE `id`='6';
 UPDATE `mifostenant-default`.`m_product_loan` SET `external_id`='8a5cfa8345d40fb80145db589e013fff' WHERE `id`='3';
+
+INSERT INTO `mifostenant-default`.`m_product_loan_charge` (`product_loan_id`, `charge_id`) VALUES ('1', '3');
+INSERT INTO `mifostenant-default`.`m_product_loan_charge` (`product_loan_id`, `charge_id`) VALUES ('2', '3');
+INSERT INTO `mifostenant-default`.`m_product_loan_charge` (`product_loan_id`, `charge_id`) VALUES ('3', '3');
+INSERT INTO `mifostenant-default`.`m_product_loan_charge` (`product_loan_id`, `charge_id`) VALUES ('4', '3');
+INSERT INTO `mifostenant-default`.`m_product_loan_charge` (`product_loan_id`, `charge_id`) VALUES ('5', '3');
+INSERT INTO `mifostenant-default`.`m_product_loan_charge` (`product_loan_id`, `charge_id`) VALUES ('6', '3');
+INSERT INTO `mifostenant-default`.`m_product_loan_charge` (`product_loan_id`, `charge_id`) VALUES ('7', '3');
+INSERT INTO `mifostenant-default`.`m_product_loan_charge` (`product_loan_id`, `charge_id`) VALUES ('8', '3');
 
 
 -- ############################
@@ -188,10 +198,10 @@ INSERT INTO `mifostenant-default`.`m_client`
         `external_id`, `status_enum`, `activation_date`, `office_id`, `staff_id`,
         `firstname`, `middlename`, `lastname`, `display_name`, `submittedon_userid`,
         `activatedon_userid`
-    )
+    );
 SELECT
     c.encodedkey                     as EXTERNAL_ID,
-    300                                  as status_enum,
+    300                              as status_enum,
     DATE_FORMAT(date(LEAST(
         coalesce(c.CREATIONDATE, CURDATE()),
         coalesce(c.APPROVEDDATE, CURDATE()),
@@ -209,16 +219,16 @@ SELECT
     1                                  as submittedon_userid,
     1                                  as activatedon_userid
 from
-    phil20160204.client c
-    left join phil20160204.branch b on c.ASSIGNEDBRANCHKEY = b.ENCODEDKEY
-    left join `mifostenant-default`.m_office o on o.external_id = b.id
-    left join phil20160204.user s   on c.ASSIGNEDUSERKEY   = s.ENCODEDKEY
-    left join `mifostenant-default`.m_staff ms on s.id = ms.external_id
+    input_db.client c
+    left join input_db.branch b on c.ASSIGNEDBRANCHKEY = b.ENCODEDKEY
+    left join `mifostenant-default`.m_office o on o.external_id = b.encodedkey
+    left join input_db.user s   on c.ASSIGNEDUSERKEY   = s.ENCODEDKEY
+    left join `mifostenant-default`.m_staff ms on s.encodedkey = ms.external_id
     left join
     (
         SELECT * FROM (
             SELECT DISBURSEMENTDATE, ACCOUNTHOLDERKEY, ACCOUNTHOLDERTYPE
-            FROM phil20160204.loanaccount
+            FROM input_db.loanaccount
             WHERE ACCOUNTHOLDERTYPE = 'CLIENT'
             ORDER BY DISBURSEMENTDATE asc
         ) as t1
@@ -226,10 +236,10 @@ from
     ) lad on c.ENCODEDKEY = lad.ACCOUNTHOLDERKEY
    
         -- Get the correct office for the group and give that to the client
-    left join phil20160204.groupmember gm on gm.clientkey = c.encodedkey
-    left join phil20160204.`group` g on g.ENCODEDKEY = gm.groupkey
-    left join phil20160204.centre cn on cn.ENCODEDKEY = g.ASSIGNEDCENTREKEY
-    left join phil20160204.branch b2 on cn.ASSIGNEDBRANCHKEY = b2.ENCODEDKEY
+    left join input_db.groupmember gm on gm.clientkey = c.encodedkey
+    left join input_db.`group` g on g.ENCODEDKEY = gm.groupkey
+    left join input_db.centre cn on cn.ENCODEDKEY = g.ASSIGNEDCENTREKEY
+    left join input_db.branch b2 on cn.ASSIGNEDBRANCHKEY = b2.ENCODEDKEY
 ;
 
 -- fix a few things
@@ -271,7 +281,7 @@ SELECT
         b.CREATIONDATE), '%Y-%m-%d')      as submittedon_date,
     1                                     as submittedon_userid
 from
-    phil20160204.branch b
+    input_db.branch b
 left join
     `mifostenant-default`.m_office mo on mo.external_id = b.id
 UNION
@@ -289,8 +299,8 @@ select
        c.CREATIONDATE), '%Y-%m-%d')      as submittedon_date,
     1                                     as submittedon_userid
 from
-    phil20160204.centre c
-left join phil20160204.branch b on b.ENCODEDKEY = c.ASSIGNEDBRANCHKEY
+    input_db.centre c
+left join input_db.branch b on b.ENCODEDKEY = c.ASSIGNEDBRANCHKEY
 left join `mifostenant-default`.m_office mo on mo.external_id = b.encodedkey
 ;
 
@@ -312,12 +322,12 @@ WHERE
 -- Group Migration (988)
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
-update phil20160204.`group`
+update input_db.`group`
 set groupname = concat(GROUPNAME, ' (2)')
 where id in
 (
     SELECT id
-    FROM (select * from phil20160204.`group`) as groupid
+    FROM (select * from input_db.`group`) as groupid
     GROUP BY groupname
     HAVING COUNT(*) > 1
 )
@@ -325,11 +335,11 @@ limit 10000
 ;
 
 
-UPDATE `phil20160204`.`group` SET `GROUPNAME`='CEBU-1162 (3)' WHERE `ENCODEDKEY`='8a8188bc52849d6401528c45516b742a';
-UPDATE `phil20160204`.`group` SET `GROUPNAME`=id WHERE `id`='094646451';
-UPDATE `phil20160204`.`group` SET `GROUPNAME`=id WHERE `id`='18426';
-UPDATE `phil20160204`.`group` SET `GROUPNAME`=id WHERE `id`='639521806';
-UPDATE `phil20160204`.`group` SET `GROUPNAME`=id WHERE `groupname`='ILANG-ILANG';
+UPDATE `input_db`.`group` SET `GROUPNAME`='CEBU-1162 (3)' WHERE `ENCODEDKEY`='8a8188bc52849d6401528c45516b742a';
+UPDATE `input_db`.`group` SET `GROUPNAME`=id WHERE `id`='094646451';
+UPDATE `input_db`.`group` SET `GROUPNAME`=id WHERE `id`='18426';
+UPDATE `input_db`.`group` SET `GROUPNAME`=id WHERE `id`='639521806';
+UPDATE `input_db`.`group` SET `GROUPNAME`=id WHERE `groupname`='ILANG-ILANG';
 
 
 INSERT INTO `mifostenant-default`.`m_group`
@@ -352,16 +362,16 @@ SELECT
     1                                     as activatedon_userid,
     1                                     as submittedon_userid
 from
-    phil20160204.`group` g
+    input_db.`group` g
 left join `mifostenant-default`.m_staff ms on ms.external_id = g.ASSIGNEDUSERKEY
 left join `mifostenant-default`.m_group mc on mc.external_id = g.ASSIGNEDCENTREKEY
-left join phil20160204.branch b on b.ENCODEDKEY = g.ASSIGNEDBRANCHKEY
+left join input_db.branch b on b.ENCODEDKEY = g.ASSIGNEDBRANCHKEY
 left join `mifostenant-default`.m_office mo on mo.external_id = b.encodedkey
 left join
 (
     SELECT * FROM (
         SELECT DISBURSEMENTDATE, ACCOUNTHOLDERKEY, ACCOUNTHOLDERTYPE
-        FROM phil20160204.loanaccount
+        FROM input_db.loanaccount
         WHERE ACCOUNTHOLDERTYPE = 'GROUP'
         ORDER BY DISBURSEMENTDATE asc
     ) as t1
@@ -392,7 +402,7 @@ SELECT
     mg.id        as group_id,
     mc.id        as client_id
 FROM
-    phil20160204.groupmember gm
+    input_db.groupmember gm
 left join `mifostenant-default`.m_group mg on mg.external_id = gm.groupkey
 left join `mifostenant-default`.m_client mc on mc.external_id = gm.clientkey
 ;
@@ -405,241 +415,120 @@ left join `mifostenant-default`.m_client mc on mc.external_id = gm.clientkey
 -- Group Loan Migration
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
-ALTER TABLE `mifostenant-default`.`m_loan`
-CHANGE COLUMN `account_no` `account_no` VARCHAR(20) NULL DEFAULT NULL ,
+ALTER TABLE `mifostenant-default`.`m_loan` 
+CHANGE COLUMN `account_no` `account_no` VARCHAR(20) NULL COMMENT '' ,
 DROP INDEX `loan_account_no_UNIQUE` ;
 
 
-INSERT INTO `mifostenant-default`.m_loan
-(
-    `external_id`, `group_id`, `product_id`, `loan_officer_id`,  `principal_amount_proposed`,
-    `principal_amount`, `approved_principal`, `principal_disbursed_derived`,  `principal_outstanding_derived`,
-    `nominal_interest_rate_per_period`, `annual_nominal_interest_rate`,`term_frequency`,  `number_of_repayments`,
-    `submittedon_date`, `approvedon_date`, `expected_disbursedon_date`, `disbursedon_date`, `interest_charged_derived`,  `interest_outstanding_derived`,
+
+
+INSERT INTO `mifostenant-default`.m_loan 
+( 
+	`external_id`, `group_id`, `client_id`, `product_id`, `loan_officer_id`,  `principal_amount_proposed`, 
+	`principal_amount`, `approved_principal`, `principal_disbursed_derived`,  `principal_outstanding_derived`,
+	`nominal_interest_rate_per_period`, `annual_nominal_interest_rate`,`term_frequency`,  `number_of_repayments`, 
+	`submittedon_date`, `approvedon_date`, `expected_disbursedon_date`, `disbursedon_date`, `interest_charged_derived`,
 
  -- DEFAULTS
-     `loan_status_id`,`fund_id`,`loan_type_enum`, `currency_code`,`currency_digits`, `currency_multiplesof`,`interest_calculated_in_period_enum`,
-    `allow_partial_period_interest_calcualtion`, `interest_period_frequency_enum`,`interest_method_enum`, `term_period_frequency_enum`,
-    `repay_every`, `repayment_period_frequency_enum`,`repayment_frequency_day_of_week_enum`, `amortization_method_enum`, `submittedon_userid`,
-    `approvedon_userid`, `disbursedon_userid`,  `total_charges_due_at_disbursement_derived`, `total_repayment_derived`, `principal_repaid_derived`,
-    `principal_writtenoff_derived`,`interest_repaid_derived`, `interest_waived_derived`,  `interest_writtenoff_derived`,`fee_charges_charged_derived`,
-    `fee_charges_repaid_derived`,`fee_charges_waived_derived`,`fee_charges_writtenoff_derived`, `fee_charges_outstanding_derived`, `penalty_charges_charged_derived`,
-    `penalty_charges_repaid_derived`, `penalty_charges_waived_derived`,`penalty_charges_writtenoff_derived`, `penalty_charges_outstanding_derived`,
-    `total_waived_derived`, `total_writtenoff_derived`, `total_costofloan_derived`, `loan_transaction_strategy_id`, `is_npa`, `days_in_year_enum`, 
+ 	`loan_status_id`,`fund_id`,`loan_type_enum`, `currency_code`,`currency_digits`, `currency_multiplesof`,`interest_calculated_in_period_enum`, 
+	`allow_partial_period_interest_calcualtion`, `interest_period_frequency_enum`,`interest_method_enum`, `term_period_frequency_enum`, 
+	`repay_every`, `repayment_period_frequency_enum`,`repayment_frequency_day_of_week_enum`, `amortization_method_enum`, `submittedon_userid`, 
+	`approvedon_userid`, `disbursedon_userid`,  `total_charges_due_at_disbursement_derived`, `total_repayment_derived`, `principal_repaid_derived`, 
+	`principal_writtenoff_derived`,`interest_repaid_derived`, `interest_waived_derived`,  `interest_writtenoff_derived`,`fee_charges_charged_derived`, 
+	`fee_charges_repaid_derived`,`fee_charges_waived_derived`,`fee_charges_writtenoff_derived`, `fee_charges_outstanding_derived`, `penalty_charges_charged_derived`,
+	`penalty_charges_repaid_derived`, `penalty_charges_waived_derived`,`penalty_charges_writtenoff_derived`, `penalty_charges_outstanding_derived`, 
+	`total_waived_derived`, `total_writtenoff_derived`, `total_costofloan_derived`, total_outstanding_derived,`loan_transaction_strategy_id`, `is_npa`, `days_in_year_enum`,  
     `interest_recalculation_enabled`,  `loan_product_counter`, `days_in_month_enum`, `version`
 )
 
 select
-    la.ENCODEDKEY                                            as external_id,
-    mg.id                                                     as group_id,
-    mpl.id                                                     as product_id,                                                       
-    ms.id                                                     as loan_officer_id,
-    la.LOANAMOUNT                                            as principal_amount_proposed,
-    la.LOANAMOUNT                                            as principal_amount,
-    la.LOANAMOUNT                                            as approved_principal,
-    la.LOANAMOUNT                                            as principal_disbursed_derived, 
-    la.LOANAMOUNT                                            as principal_outstanding_derived,
-    if (la.INTERESTCHARGEFREQUENCY = 'EVERY_FOUR_WEEKS',
-        ROUND(la.INTERESTRATE * 13 / 12, 6),
-        la.INTERESTRATE)                                     as nominal_interest_rate_per_period,
-    null                                                     as annual_nominal_interest_rate,
-    la.REPAYMENTINSTALLMENTS                                as term_frequency,
-    la.REPAYMENTINSTALLMENTS                                as number_of_repayments,
-    date(la.DISBURSEMENTDATE)                                 as submittedon_date,
-    date(la.DISBURSEMENTDATE)                                 as approvedon_date,
-    date(la.DISBURSEMENTDATE)                                 as expected_disbursedon_date,
-    date(la.DISBURSEMENTDATE)                                 as disbursedon_date,
-    la.INTERESTDUE                                            as interest_charged_derived,
-    la.INTERESTDUE                                            as interest_outstanding_derived,
+	la.ENCODEDKEY											as external_id, 
+	if(la.ACCOUNTHOLDERTYPE = 'CLIENT',null, mg.id)		 	as group_id,
+	if(la.ACCOUNTHOLDERTYPE = 'CLIENT',mc.id, null)		 	as client_id,
+	mpl.id										 			as product_id,														
+	ms.id								 					as loan_officer_id,
+	la.LOANAMOUNT											as principal_amount_proposed, 
+	la.LOANAMOUNT											as principal_amount,
+	la.LOANAMOUNT											as approved_principal, 
+	la.LOANAMOUNT											as principal_disbursed_derived,  
+	la.LOANAMOUNT											as principal_outstanding_derived,
+-- 	if (la.INTERESTCHARGEFREQUENCY = 'EVERY_FOUR_WEEKS', 
+-- 		ROUND(la.INTERESTRATE * 13 / 12, 6), 
+--         la.INTERESTRATE) 									as nominal_interest_rate_per_period,
+	la.INTERESTRATE 										as nominal_interest_rate_per_period,
+    null 		    										as annual_nominal_interest_rate,
+	la.REPAYMENTINSTALLMENTS								as term_frequency,
+	la.REPAYMENTINSTALLMENTS								as number_of_repayments,
+	date(la.DISBURSEMENTDATE) 								as submittedon_date, 
+    date(la.DISBURSEMENTDATE) 								as approvedon_date, 
+    date(la.DISBURSEMENTDATE) 								as expected_disbursedon_date, 
+    date(la.DISBURSEMENTDATE) 								as disbursedon_date, 
+	0														as interest_charged_derived,
     -- ------------------------------------------------------------------------------------
-    -- ------------------------------------------------------------------------------------
-    300 as `loan_status_id`,
-    1 as `fund_id`,
-    2 as `loan_type_enum`,
-    'GTQ' as `currency_code`,
-    2 as `currency_digits`,
-    0 as `currency_multiplesof`,
-    1 as `interest_calculated_in_period_enum`,
-    0 as `allow_partial_period_interest_calcualtion`,
-    2 as `interest_period_frequency_enum`,
-    1 as `interest_method_enum`,
-    2 as `term_period_frequency_enum`,
-    1 as `repay_every`,
-    2 as `repayment_period_frequency_enum`,
-    0 as `repayment_frequency_day_of_week_enum`,
-    1 as `amortization_method_enum`,
-    1 as `submittedon_userid`,
-    1 as `approvedon_userid`,
-    1 as `disbursedon_userid`, 
-    0 as `total_charges_due_at_disbursement_derived`,
-    0 as `total_repayment_derived`,
-    0 as `principal_repaid_derived`,
-    0 as `principal_writtenoff_derived`,
-    0 as `interest_repaid_derived`,
-    0 as `interest_waived_derived`, 
-    0 as `interest_writtenoff_derived`,
-    0 as `fee_charges_charged_derived`,
-    0 as `fee_charges_repaid_derived`,
-    0 as `fee_charges_waived_derived`,
-    0 as `fee_charges_writtenoff_derived`,
-    0 as `fee_charges_outstanding_derived`,
-    0 as `penalty_charges_charged_derived`,
-    0 as `penalty_charges_repaid_derived`,
-    0 as `penalty_charges_waived_derived`,
-    0 as `penalty_charges_writtenoff_derived`,
-    0 as `penalty_charges_outstanding_derived`,
-    0 as `total_waived_derived`,
-    0 as `total_writtenoff_derived`,
-    0 as `total_costofloan_derived`,
-    1 as `loan_transaction_strategy_id`,
-    0 as `is_npa`,
-    360 as `days_in_year_enum`, 
-    0 as `interest_recalculation_enabled`, 
-    1 as `loan_product_counter`,
-    30 as `days_in_month_enum`,
-    3 as `version`
+	-- ------------------------------------------------------------------------------------
+	300 as `loan_status_id`,
+	1 as `fund_id`,
+	if(la.ACCOUNTHOLDERTYPE = 'CLIENT',1,2) as `loan_type_enum`, 
+	'PHP' as `currency_code`,
+	2 as `currency_digits`,
+	0 as `currency_multiplesof`,
+	1 as `interest_calculated_in_period_enum`, 
+	0 as `allow_partial_period_interest_calcualtion`, 
+	2 as `interest_period_frequency_enum`,
+	1 as `interest_method_enum`, 
+	2 as `term_period_frequency_enum`, 
+	1 as `repay_every`, 
+	2 as `repayment_period_frequency_enum`,
+	0 as `repayment_frequency_day_of_week_enum`, 
+	1 as `amortization_method_enum`, 
+	1 as `submittedon_userid`, 
+	1 as `approvedon_userid`, 
+	1 as `disbursedon_userid`, 
+	-- ------------------------------------------------------------------------------------
+	0 as `total_charges_due_at_disbursement_derived`, 
+	0 as total_repayment_derived, 
+	la.principalpaid as principal_repaid_derived, 
+	0 as `principal_writtenoff_derived`,
+	la.interestpaid as interest_repaid_derived, 
+	0 as `interest_waived_derived`,  
+	0 as `interest_writtenoff_derived`,
+	0 as `fee_charges_charged_derived`, 
+	la.feespaid as fee_charges_repaid_derived,
+	0 as `fee_charges_waived_derived`,
+	0 as `fee_charges_writtenoff_derived`, 
+	0 as `fee_charges_outstanding_derived`, 
+	0 as `penalty_charges_charged_derived`,
+	0 as `penalty_charges_repaid_derived`, 
+	0 as `penalty_charges_waived_derived`,
+	0 as `penalty_charges_writtenoff_derived`, 
+	0 as `penalty_charges_outstanding_derived`, 
+	0 as `total_waived_derived`, 
+	0 as `total_writtenoff_derived`, 
+	0 as `total_costofloan_derived`, 
+    0 as `total_outstanding_derived`,
+	-- ------------------------------------------------------------------------------------   
+	1 as `loan_transaction_strategy_id`, 
+	0 as `is_npa`, 
+    360 as `days_in_year_enum`,  
+	0 as `interest_recalculation_enabled`,  
+	1 as `loan_product_counter`, 
+	30 as `days_in_month_enum`, 
+	3 as `version`
 
 from
-    phil20160204.loanaccount la
-left join `mifostenant-default`.m_group mg on mg.external_id = la.ACCOUNTHOLDERKEY
+	input_db.loanaccount la
+left join `mifostenant-default`.m_group mg on mg.external_id = la.ACCOUNTHOLDERKEY 
+left join `mifostenant-default`.m_client mc on mc.external_id = la.ACCOUNTHOLDERKEY 
 left join `mifostenant-default`.m_staff ms on ms.external_id = la.ASSIGNEDUSERKEY
-left join `mifostenant-default`.m_product_loan mpl on mpl.external_id = la.PRODUCTTYPEKEY
-where
-    la.ACCOUNTHOLDERTYPE = 'GROUP'
+left join `mifostenant-default`.m_product_loan mpl on mpl.external_id = la.PRODUCTTYPEKEY	
 ;
 
-
--- NEED TO ADD AT TTHE END OF THIS CALL!!!!
--- `total_expected_repayment_derived`, `total_expected_costofloan_derived`, `total_outstanding_derived`, account_no
--- Fix a few things
-/*
-UPDATE
-    `mifostenant-default`.`m_loan`
-SET
-    account_no = id,
-    total_expected_repayment_derived = (principal_amount + interest_charged_derived),
-    total_expected_costofloan_derived = interest_charged_derived,
-    total_outstanding_derived = (principal_amount + interest_charged_derived)
-WHERE
-    id <> '';
-*/   
-   
-   
-   
--- ----------------------------------------------------------------------------------------------------
--- ----------------------------------------------------------------------------------------------------
--- INDIVIDUAL LOANS
--- ----------------------------------------------------------------------------------------------------
--- ----------------------------------------------------------------------------------------------------
-
-
-INSERT INTO `mifostenant-default`.m_loan
-(
-    `external_id`, `client_id`, `product_id`, `loan_officer_id`,  `principal_amount_proposed`,
-    `principal_amount`, `approved_principal`, `principal_disbursed_derived`,  `principal_outstanding_derived`,
-    `nominal_interest_rate_per_period`, `annual_nominal_interest_rate`,`term_frequency`,  `number_of_repayments`,
-    `submittedon_date`, `approvedon_date`, `expected_disbursedon_date`, `disbursedon_date`, `interest_charged_derived`,  `interest_outstanding_derived`,
-
- -- DEFAULTS
-     `loan_status_id`,`fund_id`,`loan_type_enum`, `currency_code`,`currency_digits`, `currency_multiplesof`,`interest_calculated_in_period_enum`,
-    `allow_partial_period_interest_calcualtion`, `interest_period_frequency_enum`,`interest_method_enum`, `term_period_frequency_enum`,
-    `repay_every`, `repayment_period_frequency_enum`,`repayment_frequency_day_of_week_enum`, `amortization_method_enum`, `submittedon_userid`,
-    `approvedon_userid`, `disbursedon_userid`,  `total_charges_due_at_disbursement_derived`, `total_repayment_derived`, `principal_repaid_derived`,
-    `principal_writtenoff_derived`,`interest_repaid_derived`, `interest_waived_derived`,  `interest_writtenoff_derived`,`fee_charges_charged_derived`,
-    `fee_charges_repaid_derived`,`fee_charges_waived_derived`,`fee_charges_writtenoff_derived`, `fee_charges_outstanding_derived`, `penalty_charges_charged_derived`,
-    `penalty_charges_repaid_derived`, `penalty_charges_waived_derived`,`penalty_charges_writtenoff_derived`, `penalty_charges_outstanding_derived`,
-    `total_waived_derived`, `total_writtenoff_derived`, `total_costofloan_derived`, `loan_transaction_strategy_id`, `is_npa`, `days_in_year_enum`, 
-    `interest_recalculation_enabled`,  `loan_product_counter`, `days_in_month_enum`, `version`
-)
-
- select
-    la.ENCODEDKEY                                            as external_id,
-    mc.id                                                    as client_id,
-    mpl.id                                                   as product_id,                                                       
-    ms.id                                                    as loan_officer_id,
-    la.LOANAMOUNT                                            as principal_amount_proposed,
-    la.LOANAMOUNT                                            as principal_amount,
-    la.LOANAMOUNT                                            as approved_principal,
-    la.LOANAMOUNT                                            as principal_disbursed_derived, 
-    la.LOANAMOUNT                                            as principal_outstanding_derived,
---    if (la.INTERESTCHARGEFREQUENCY = 'EVERY_FOUR_WEEKS',
---        ROUND(la.INTERESTRATE * 13 / 12, 6),
---        la.INTERESTRATE)                                      as nominal_interest_rate_per_period,
-	la.INTERESTRATE		                                      as nominal_interest_rate_per_period,
-    null                                                      as annual_nominal_interest_rate,
-    la.REPAYMENTINSTALLMENTS                                  as term_frequency,
-    la.REPAYMENTINSTALLMENTS                                  as number_of_repayments,
-    date(la.DISBURSEMENTDATE)                                 as submittedon_date,
-    date(la.DISBURSEMENTDATE)                                 as approvedon_date,
-    date(la.DISBURSEMENTDATE)                                 as expected_disbursedon_date,
-    date(la.DISBURSEMENTDATE)                                 as disbursedon_date,
-    la.INTERESTDUE                                            as interest_charged_derived,
-    la.INTERESTDUE                                            as interest_outstanding_derived,
-    -- ------------------------------------------------------------------------------------
-    -- ------------------------------------------------------------------------------------
-    300 as `loan_status_id`,
-    1 as `fund_id`,
-    1 as `loan_type_enum`,
-    'GTQ' as `currency_code`,
-    2 as `currency_digits`,
-    0 as `currency_multiplesof`,
-    1 as `interest_calculated_in_period_enum`,
-    0 as `allow_partial_period_interest_calcualtion`,
-    2 as `interest_period_frequency_enum`,
-    1 as `interest_method_enum`,
-    2 as `term_period_frequency_enum`,
-    1 as `repay_every`,
-    2 as `repayment_period_frequency_enum`,
-    0 as `repayment_frequency_day_of_week_enum`,
-    1 as `amortization_method_enum`,
-    1 as `submittedon_userid`,
-    1 as `approvedon_userid`,
-    1 as `disbursedon_userid`, 
-    0 as `total_charges_due_at_disbursement_derived`,
-    0 as `total_repayment_derived`,
-    0 as `principal_repaid_derived`,
-    0 as `principal_writtenoff_derived`,
-    0 as `interest_repaid_derived`,
-    0 as `interest_waived_derived`, 
-    0 as `interest_writtenoff_derived`,
-    0 as `fee_charges_charged_derived`,
-    0 as `fee_charges_repaid_derived`,
-    0 as `fee_charges_waived_derived`,
-    0 as `fee_charges_writtenoff_derived`,
-    0 as `fee_charges_outstanding_derived`,
-    0 as `penalty_charges_charged_derived`,
-    0 as `penalty_charges_repaid_derived`,
-    0 as `penalty_charges_waived_derived`,
-    0 as `penalty_charges_writtenoff_derived`,
-    0 as `penalty_charges_outstanding_derived`,
-    0 as `total_waived_derived`,
-    0 as `total_writtenoff_derived`,
-    0 as `total_costofloan_derived`,
-    1 as `loan_transaction_strategy_id`,
-    0 as `is_npa`,
-    360 as `days_in_year_enum`, 
-    0 as `interest_recalculation_enabled`, 
-    1 as `loan_product_counter`,
-    30 as `days_in_month_enum`,
-    3 as `version`
-
-from
-    phil20160204.loanaccount la
-left join `mifostenant-default`.m_client mc on mc.external_id = la.ACCOUNTHOLDERKEY
-left join `mifostenant-default`.m_staff ms on ms.external_id = la.ASSIGNEDUSERKEY
-left join `mifostenant-default`.m_product_loan mpl on mpl.external_id = la.PRODUCTTYPEKEY
-where
-    la.ACCOUNTHOLDERTYPE = 'CLIENT'
-;
 
 -- Fix a few things
 UPDATE
     `mifostenant-default`.`m_loan`
 SET
-    account_no = id,
-    total_expected_repayment_derived = (principal_amount + interest_charged_derived),
-    total_expected_costofloan_derived = interest_charged_derived,
-    total_outstanding_derived = (principal_amount + interest_charged_derived)
+    account_no = id
 WHERE
     id <> '';
    
@@ -648,8 +537,114 @@ ALTER TABLE `mifostenant-default`.`m_loan`
 CHANGE COLUMN `account_no` `account_no` VARCHAR(20) NOT NULL ,
 ADD UNIQUE INDEX `account_no_UNIQUE` (`account_no` ASC);
 
+-- ----------------------------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------------------------------
+-- LOAN SCHEDULE INSERT
+-- ----------------------------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------------------------------
+set global connect_timeout=60000;
+
+INSERT INTO `mifostenant-default`.`m_loan_repayment_schedule`
+(
+    `loan_id`, `duedate`, `principal_amount`,
+    `interest_amount`, `completed_derived`, `createdby_id`,
+    `created_date`, `lastmodified_date`, `lastmodifiedby_id`, `recalculated_interest_component`
+ )
+SELECT
+	ml.id				                                as loan_id,
+    DATE_FORMAT(date(phr.DUEDATE), '%Y-%m-%d')         	as duedate,
+    phr.PRINCIPALDUE                                 	as principal_amount,
+    phr.INTERESTDUE                                     as interest_amount,
+    0                                                	as completed_derived,
+    1                                                 	as createdby_id,
+    current_timestamp()                             	as created_date,
+    current_timestamp()                             	as lastmodified_date,
+    1                                                 	as lastmodifiedby_id,
+    0                                                 	as recalculated_interest_component
+from
+    input_db.repayment phr, `mifostenant-default`.m_loan ml
+where
+     ml.external_id = phr.PARENTACCOUNTKEY
+order by
+     phr.PARENTACCOUNTKEY, phr.duedate
+;
 
 
+SET SQL_SAFE_UPDATES = 0;
+CREATE TEMPORARY TABLE IF NOT EXISTS `mifostenant-default`.table2 AS (
+SELECT id, loan_id as l, duedate as d,
+(
+select COUNT(*) + 1 from  `mifostenant-default`.`m_loan_repayment_schedule`
+
+where loan_id = l
+and duedate < d
+) as c
+FROM `mifostenant-default`.`m_loan_repayment_schedule`
+
+group by id
+);
+
+
+UPDATE `mifostenant-default`.`m_loan_repayment_schedule`
+JOIN `mifostenant-default`.table2 t2 on t2.id = `mifostenant-default`.`m_loan_repayment_schedule`.id
+SET installment = t2.c
+where m_loan_repayment_schedule.created_date <> ''
+;
+-- ----------------------------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------------------------------
+-- FEES
+-- ----------------------------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------------------------------
+
+select * from `mifostenant-default`.m_loan_transaction where loan_id = 2187; -- 5358
+
+select
+    lt.TYPE,
+    lt.ENCODEDKEY,
+    lt.PARENTACCOUNTKEY,
+    lt.AMOUNT,
+    DATE_FORMAT(date(lt.CREATIONDATE), '%d/%m/%Y') as date,
+    ifnull(lt.REVERSALTRANSACTIONKEY,'') as reversalKey,
+    la.REPAYMENTINSTALLMENTS,
+	ml.id
+from
+    input_db.loantransaction lt,
+    input_db.loanaccount la,
+    `mifostenant-default`.m_loan ml
+where
+    lt.parentaccountkey = la.encodedkey
+    and ml.external_id = la.ENCODEDKEY
+    and la.ENCODEDKEY = lt.PARENTACCOUNTKEY
+    and lt.type not like '%INTEREST%'
+
+order by lt.parentaccountkey asc, lt.creationdate asc
+
+
+ ;
+
+
+
+
+-- ----------------------------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------------------------------
+-- LOAN UPDATE
+-- ----------------------------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------------------------------
+
+set global connect_timeout=60000;
+UPDATE `mifostenant-default`.m_loan ml
+join input_db.loanaccount la on ml.external_id = la.encodedkey
+set
+	principal_amount_proposed = la.LOANAMOUNT, 
+	principal_amount = la.LOANAMOUNT,
+	approved_principal = la.LOANAMOUNT, 
+	principal_disbursed_derived = la.LOANAMOUNT,  
+	principal_outstanding_derived = la.LOANAMOUNT,
+	principal_repaid_derived = la.principalpaid, 
+	principal_repaid_derived = la.principalpaid, 
+	interest_repaid_derived = la.interestpaid, 
+	fee_charges_repaid_derived = la.feespaid
+;
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
 -- LOAN DISBURSEMENT TRANSACTIONS
@@ -679,16 +674,41 @@ SELECT
         DATE_SUB(curdate(), INTERVAL 10 YEAR))        as `created_date`
 from
     `mifostenant-default`.m_loan ml
-left join phil20160204.loanaccount gla on ml.external_id = gla.encodedkey
+left join input_db.loanaccount gla on ml.external_id = gla.encodedkey
 left join `mifostenant-default`.m_office mo on gla.assignedbranchkey = mo.external_id
 ;
 --     could add `payment_detail_id` with a script
 
+-- ----------------------------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------------------------------
+-- GET CORRECT PAID INTEREST
+-- ----------------------------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------------------------------
 
+/*
+CREATE TEMPORARY TABLE IF NOT EXISTS `mifostenant-default`.table3 AS (
+SELECT 
+	PARENTACCOUNTKEY as PARENTACCOUNTKEY, 
+	SUM(INTERESTDUE) as interest
+FROM input_db.repayment 
+Group By PARENTACCOUNTKEY
+);
+*/
+
+UPDATE `mifostenant-default`.m_loan ml
+join (
+	SELECT 
+		PARENTACCOUNTKEY as PARENTACCOUNTKEY, 
+		SUM(INTERESTDUE) as interest
+	FROM input_db.repayment 
+	Group By PARENTACCOUNTKEY
+) as t4 on ml.external_id = t4.PARENTACCOUNTKEY
+set ml.interest_charged_derived = t4.interest   
+;
 
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
--- INTEREST TRANSACTIONS
+-- ORIGINAL INTEREST TRANSACTIONS
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
 INSERT INTO `mifostenant-default`.`m_loan_transaction`
@@ -714,76 +734,71 @@ SELECT
         DATE_SUB(curdate(), INTERVAL 10 YEAR))        as `created_date`
 from
     `mifostenant-default`.m_loan ml
-left join phil20160204.loanaccount gla on ml.external_id = gla.encodedkey
+left join input_db.loanaccount gla on ml.external_id = gla.encodedkey
 left join `mifostenant-default`.m_office mo on gla.assignedbranchkey = mo.external_id
 ;
 
 
-
-
+-- ----------------------------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------------------------------
+-- GET ORIGNAL AMT OF FEES
+-- ----------------------------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------------------------------
+UPDATE 
+	`mifostenant-default`.`m_loan` ml
+join
+	`mifostenant-default`.m_loan_charge mlc on mlc.loan_id = ml.id
+SET 
+	ml.fee_charges_charged_derived = mlc.amount;
 
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
--- LOAN SCHEDULE UPDATE
+-- OUTSTANDING && TOTALS
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
-set global connect_timeout=60000;
-
-INSERT INTO `mifostenant-default`.`m_loan_repayment_schedule`
-(
-    `loan_id`, `duedate`, `principal_amount`,
-    `interest_amount`, `completed_derived`, `createdby_id`,
-    `created_date`, `lastmodified_date`, `lastmodifiedby_id`, `recalculated_interest_component`
-
- )
-
-SELECT
-	ml.id				                                as loan_id,
-    DATE_FORMAT(date(phr.DUEDATE), '%Y-%m-%d')         	as duedate,
-    phr.PRINCIPALDUE                                 	as principal_amount,
-    phr.INTERESTDUE                                     as interest_amount,
-    0                                                	as completed_derived,
-    1                                                 	as createdby_id,
-    current_timestamp()                             	as created_date,
-    current_timestamp()                             	as lastmodified_date,
-    1                                                 	as lastmodifiedby_id,
-    0                                                 	as recalculated_interest_component
-from
-    phil20160204.repayment phr, `mifostenant-default`.m_loan ml
-where
-     ml.external_id = phr.PARENTACCOUNTKEY
-order by
-     phr.PARENTACCOUNTKEY, phr.duedate
+-- OVERDUE
+-- OUTSTANDING
+UPDATE 
+	`mifostenant-default`.`m_loan` 
+SET 
+	principal_outstanding_derived = (principal_disbursed_derived - principal_repaid_derived),
+	interest_outstanding_derived = (interest_charged_derived - interest_repaid_derived),
+	fee_charges_outstanding_derived = (fee_charges_charged_derived - fee_charges_repaid_derived),
+    penalty_charges_outstanding_derived = (penalty_charges_charged_derived - penalty_charges_repaid_derived)
 ;
 
 
-CREATE TEMPORARY TABLE IF NOT EXISTS `mifostenant-default`.table2 AS (
-SELECT id, loan_id as l, duedate as d,
-(
-select COUNT(*) + 1 from  `mifostenant-default`.`m_loan_repayment_schedule`
-
-where loan_id = l
-and duedate < d
-) as c
-FROM `mifostenant-default`.`m_loan_repayment_schedule`
-
-group by id
-);
-
-UPDATE `mifostenant-default`.`m_loan_repayment_schedule`
-JOIN `mifostenant-default`.table2 t2 on t2.id = `mifostenant-default`.`m_loan_repayment_schedule`.id
-SET installment = t2.c
-where m_loan_repayment_schedule.created_date <> ''
+-- TOTALS
+UPDATE 
+	`mifostenant-default`.`m_loan` 
+SET 
+	total_expected_repayment_derived = (principal_disbursed_derived + interest_charged_derived + fee_charges_charged_derived + penalty_charges_charged_derived),
+    total_repayment_derived = (principal_repaid_derived + interest_repaid_derived + fee_charges_repaid_derived + penalty_charges_repaid_derived),
+    total_waived_derived = (interest_waived_derived + fee_charges_waived_derived + penalty_charges_waived_derived),
+    total_writtenoff_derived = (principal_writtenoff_derived + interest_writtenoff_derived + fee_charges_writtenoff_derived + penalty_charges_writtenoff_derived),
+    total_outstanding_derived = (principal_outstanding_derived + interest_outstanding_derived + fee_charges_outstanding_derived + penalty_charges_outstanding_derived)
+    
+    -- ?? Where is this used ??
+    -- total_expected_costofloan_derived = 666
 ;
 
 
+-- ----------------------------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------------------------------
+-- REPAYMENTS
+-- ----------------------------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------------------------------
+SELECT * FROM `mifostenant-default`.m_loan_transaction 
+where transaction_type_enum = 2;
 
--- ----------------------------------------------------------------------------------------------------
--- ----------------------------------------------------------------------------------------------------
--- FEES
--- ----------------------------------------------------------------------------------------------------
--- ----------------------------------------------------------------------------------------------------
-  select
+select * from `mifostenant-default`.m_loan where external_id = '8a10ca904b70d410014b712f36c101c3';
+
+SELECT * from guatemala.loantransaction where type = 'REPAYMENT';
+
+-- 45 sec / 370 = 8.2/sec
+-- 105 sec / 802 = 7.6 sec
+--  / 1837
+select
     lt.TYPE,
     lt.ENCODEDKEY,
     lt.PARENTACCOUNTKEY,
@@ -793,58 +808,84 @@ where m_loan_repayment_schedule.created_date <> ''
     la.REPAYMENTINSTALLMENTS,
 	ml.id
 from
-    phil20160204.loantransaction lt,
-    phil20160204.loanaccount la,
+    input_db.loantransaction lt,
+    input_db.loanaccount la,
     `mifostenant-default`.m_loan ml
 where
     lt.parentaccountkey = la.encodedkey
     and ml.external_id = la.ENCODEDKEY
     and la.ENCODEDKEY = lt.PARENTACCOUNTKEY
-    and lt.type not like '%INTEREST%'
+    and lt.type = 'REPAYMENT'
+    and la.ASSIGNEDBRANCHKEY = '8a2b82e6455edd890145bbc90f6c75af'
+
 order by lt.parentaccountkey asc, lt.creationdate asc
+
+
  ;
 
--- ----------------------------------------------------------------------------------------------------
--- ----------------------------------------------------------------------------------------------------
--- ?
--- ----------------------------------------------------------------------------------------------------
--- ----------------------------------------------------------------------------------------------------
-SELECT * from phil20160204.loantransaction group by type;
-
-SELECT
-    la.ID,
-    lt.`TYPE`,
-    fa.AMOUNT as pdf_amt,
-    lt.AMOUNT as lt_amt,
-    if((lt.AMOUNT < 0), lt.AMOUNT, fa.AMOUNT) as real_amt,
-    la.REPAYMENTINSTALLMENTS,
-    lt.REVERSALTRANSACTIONKEY,
-    fa.LOANPREDEFINEDFEEAMOUNTS_ENCODEDKEY_OWN,
-    lt.PARENTACCOUNTKEY
-FROM
-    phil20160204.predefinedfeeamount fa,
-    phil20160204.loantransaction lt,
-    phil20160204.loanaccount la
-    -- phil20160204.repayment r
+-- DB -> DB
+/*
+insert into 
+	`mifostenant-default`.m_loan_transaction 
+	(
+		loan_id,
+		office_id,
+		external_id,
+		transaction_date,
+		amount,
+		submitted_on_date,
+		created_date,
+		appuser_id,
+        transaction_type_enum,
+        outstanding_loan_balance_derived,
+        principal_portion_derived,
+		interest_portion_derived
+	)
+ select 
+	ml.id as loan_id,
+    mo.id as office_id,
+    glt.encodedkey as external_id,
+    glt.entrydate as transaction_date,
+    glt.amount as amount,
+    glt.creationdate as submitted_on_date,
+    glt.creationdate as created_date,
+    1 as appuser_id,
+    2 as transaction_type_enum,
+    glt.balance as outstanding_loan_balance_derived,
+    glt.principalamount as principal_portion_derived,
+    glt.interestamount as interest_amount_derived
+from 
+    input_db.loantransaction glt,
+	`mifostenant-default`.m_loan ml,
+    `mifostenant-default`.m_office mo
 where
-    fa.LOANPREDEFINEDFEEAMOUNTS_ENCODEDKEY_OWN = lt.ENCODEDKEY
-    and la.ENCODEDKEY = lt.PARENTACCOUNTKEY
-    and lt.`type` = 'FEE'
-order by lt.PARENTACCOUNTKEY, lt.CREATIONDATE   
+	glt.PARENTACCOUNTKEY = ml.external_id 
+AND (
+		glt.BRANCHKEY = mo.external_id
+		or glt.BRANCHKEY is null
+    )
+AND glt.type = 'REPAYMENT'
+order by glt.ENTRYDATE, glt.creationdate 
 ;
+*/
+SET SQL_SAFE_UPDATES = 0;
 
-
-SELECT * from `mifostenant-default`.m_loan_transaction group by transaction_type_enum;
-
-SELECT type, count(*) FROM guatemala.loantransaction group by type;
-SELECT type, count(*) FROM phil20160204.loantransaction group by type;
-
-select count(*) from phil20160204.repayment;
-select * from phil20160204.loantransaction where PARENTACCOUNTKEY = '8a10ca994b09d039014b0e1d85e56713';
-select * from phil20160204.loanaccount where REPAYMENTINSTALLMENTS = 1;
-select * from phil20160204.predefinedfeeamount;
-
+SELECT * FROM `mifostenant-default`.m_client;
 /**
 Repayment query
 **/
-
+UPDATE `mifostenant-default`.m_client mc
+-- select * from `mifostenant-default`.m_client mc
+join input_db.client c on c.encodedkey = mc.external_id
+join `mifostenant-default`.m_office o on o.external_id = c.ASSIGNEDBRANCHKEY
+join `mifostenant-default`.m_staff s on s.external_id = c.ASSIGNEDUSERKEY
+set 
+	mc.office_id = o.id,
+    mc.staff_id = s.id
+;
+--
+--     input_db.client c
+--     left join input_db.branch b on c.ASSIGNEDBRANCHKEY = b.ENCODEDKEY
+--     left join `mifostenant-default`.m_office o on o.external_id = b.encodedkey
+--     left join input_db.user s   on c.ASSIGNEDUSERKEY   = s.ENCODEDKEY
+--     left join `mifostenant-default`.m_staff ms on s.encodedkey = ms.external_id

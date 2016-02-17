@@ -10,11 +10,13 @@ import os
 import pdb
 requests.packages.urllib3.disable_warnings()
 BASE_URL = 'https://localhost:8443'
-#API_URL = BASE_URL + '/fineract-provider/api/v1'
-API_URL = BASE_URL + '/mifosng-provider/api/v1'
 auth_token = {}
-#auth_token["Fineract-Platform-TenantId"] = 'default'
-auth_token["X-Mifos-Platform-TenantId"] = 'default'
+API_URL = BASE_URL + '/fineract-provider/api/v1'
+auth_token["Fineract-Platform-TenantId"] = 'default'
+
+# for the old version uncomment below
+# API_URL = BASE_URL + '/mifosng-provider/api/v1'
+# auth_token["X-Mifos-Platform-TenantId"] = 'default'
 auth_res = requests.post(API_URL + '/authentication?username=mifos&password=password', 
 		headers=auth_token, verify=False).json()
 
@@ -95,7 +97,15 @@ def process_loan(historyDirty):
                 "dueDate": formatDate(fees['date']),
                 "chargeId": "3"
             }
+            # pdb.set_trace()
+          #  print('data: ', data)
             res = requests.post(API_URL + '/loans/{}/charges'.format(loanid), headers=auth_token, json=data, verify=False, timeout=10).json()
+          #  print("res: ", res)
+            # if
+            #  int(res['httpStatusCode']) > 400:
+            # 	print(res['errors'])
+            # {'errors': [{'parameterName': 'id', 'args': [], 'developerMessage': 'Charge and Loan must have the same currency.', 'userMessageGlobalisationCode': 'error.msg.loanCharge.attach.to.loan.invalid.currency', 'defaultUserMessage': 'Charge and Loan must have the same currency.', 'value': None}], 'developerMessage': 'Request was understood but caused a domain rule violation.', 'userMessageGlobalisationCode': 'validation.msg.domain.rule.violation', 'defaultUserMessage': 'Errors contain reason for domain rule violation.', 'httpStatusCode': '403'}
+
     except Exception as e:
         print('\nexception: ', e)
         return
@@ -131,13 +141,13 @@ def main():
             if current_parent != tran.parent:
                 # change the following line to process_loan(history) to remove threading
                 executor.submit(process_loan, history)
-                #process_loan(history)
+          #      process_loan(history)
                 history = []
             current_parent = tran.parent
             ignore = []
             history.append(tran)
         executor.submit(process_loan, history)
-        #process_loan(history)
+      #  process_loan(history)
         executor.shutdown()
         print('\n\nDONE!!!!\n\n')
 
