@@ -176,6 +176,18 @@ INSERT INTO `mifostenant-default`.`m_product_loan_charge` (`product_loan_id`, `c
 INSERT INTO `mifostenant-default`.`m_product_loan_charge` (`product_loan_id`, `charge_id`) VALUES ('8', '3');
 
 
+UPDATE `mifostenant-default`.`m_savings_product` SET `description`='8a1fc2624693dad8014693e8724c0015' WHERE `id`='6';
+UPDATE `mifostenant-default`.`m_savings_product` SET `description`='8a1fc2624693dad8014693e95fcd001a' WHERE `id`='7';
+UPDATE `mifostenant-default`.`m_savings_product` SET `description`='8a1fc2624693dad8014693ea2f26001c' WHERE `id`='8';
+UPDATE `mifostenant-default`.`m_savings_product` SET `description`='8a1fc2624693dad8014693e531a90009' WHERE `id`='4';
+UPDATE `mifostenant-default`.`m_savings_product` SET `description`='8a1fc2624693dad8014693ead788001f' WHERE `id`='9';
+UPDATE `mifostenant-default`.`m_savings_product` SET `description`='8a1fc2624693dad8014693e60fc4000c' WHERE `id`='1';
+UPDATE `mifostenant-default`.`m_savings_product` SET `description`='8a1fc2624693dad8014693e4133b0006' WHERE `id`='3';
+UPDATE `mifostenant-default`.`m_savings_product` SET `description`='8a1fc2624693dad8014693e76c6d000f' WHERE `id`='5';
+UPDATE `mifostenant-default`.`m_savings_product` SET `description`='8aad1cd8468b124401468d13987227c5' WHERE `id`='2';
+UPDATE `mifostenant-default`.`m_savings_product` SET `description`='8aab160f499477da01499c81d2ea458a' WHERE `id`='10';
+
+
 -- ############################
 -- ##############
 -- END DATABASE PREP
@@ -198,7 +210,7 @@ INSERT INTO `mifostenant-default`.`m_client`
         `external_id`, `status_enum`, `activation_date`, `office_id`, `staff_id`,
         `firstname`, `middlename`, `lastname`, `display_name`, `submittedon_userid`,
         `activatedon_userid`
-    );
+    )
 SELECT
     c.encodedkey                     as EXTERNAL_ID,
     300                              as status_enum,
@@ -262,29 +274,46 @@ ADD UNIQUE INDEX `account_no_UNIQUE` (`account_no` ASC);
 -- Center Migration
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
+update input_db.`centre`
+set name = concat(name, ' (2)')
+where name in
+(
+    SELECT name
+    FROM (select * from input_db.`centre`) as center_id
+    GROUP BY name
+    HAVING COUNT(*) > 1
+)
+limit 10000
+;
+
+SELECT * from  `input_db`.`centre`;
+-- Error Code: 1062. Duplicate entry 'ILANG-ILANG-1' for key 'name'
+UPDATE `input_db`.`centre` SET `name`= concat(name,'(2)') WHERE `name`='ILANG-ILANG';
+
+
 INSERT INTO `mifostenant-default`.`m_group`
     (
         `external_id`, `status_enum`, `activation_date`, `office_id`, `staff_id`, `level_id`,
         `display_name`, `activatedon_userid`, `submittedon_date`, `submittedon_userid`
     )
-SELECT
-    b.encodedkey                         as external_id,
-    300                                     as status_enum,
-    DATE_FORMAT(date(
-        b.CREATIONDATE), '%Y-%m-%d')      as ACTIVATION_DATE,
-    1                                     as OFFICE_ID,
-    1                                     as STAFF_ID,                           
-    1                                     as level_id,
-    concat('CENTER TBD','(', b.id, ')')  as DISPLAY_NAME,
-    1                                     as activatedon_userid,
-    DATE_FORMAT(date(
-        b.CREATIONDATE), '%Y-%m-%d')      as submittedon_date,
-    1                                     as submittedon_userid
-from
-    input_db.branch b
-left join
-    `mifostenant-default`.m_office mo on mo.external_id = b.id
-UNION
+-- SELECT
+--     b.encodedkey                          as external_id,
+--     300                                   as status_enum,
+--     DATE_FORMAT(date(
+--         b.CREATIONDATE), '%Y-%m-%d')      as ACTIVATION_DATE,
+--     1                                     as OFFICE_ID,
+--     1                                     as STAFF_ID,                           
+--     1                                     as level_id,
+--     concat('CENTER TBD','(', b.name, ')') as DISPLAY_NAME,
+--     1                                     as activatedon_userid,
+--     DATE_FORMAT(date(
+--         b.CREATIONDATE), '%Y-%m-%d')      as submittedon_date,
+--     1                                     as submittedon_userid
+-- from
+--     input_db.branch b
+-- left join
+--     `mifostenant-default`.m_office mo on mo.external_id = b.id
+-- UNION
 select
     c.ENCODEDKEY                         as external_id,
     300                                     as status_enum,
@@ -293,7 +322,7 @@ select
     mo.id                                 as OFFICE_ID,
     1                                     as STAFF_ID,                           
     1                                     as level_id,
-    c.id                                   as DISPLAY_NAME,
+    c.name                                   as DISPLAY_NAME,
     1                                     as activatedon_userid,
     DATE_FORMAT(date(
        c.CREATIONDATE), '%Y-%m-%d')      as submittedon_date,
@@ -889,3 +918,102 @@ set
 --     left join `mifostenant-default`.m_office o on o.external_id = b.encodedkey
 --     left join input_db.user s   on c.ASSIGNEDUSERKEY   = s.ENCODEDKEY
 --     left join `mifostenant-default`.m_staff ms on s.encodedkey = ms.external_id
+
+
+-- ----------------------------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------------------------------
+-- CREATE SAVINGS ACCOUNTS
+-- ----------------------------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------------------------------
+
+
+INSERT into `mifostenant-default`.m_savings_account
+VALUES
+(
+	`external_id`,  `client_id`,  `group_id`,  `product_id`,  `field_officer_id`,    `account_type_enum`,  `deposit_type_enum`,    `submittedon_date`,  `approvedon_date`,  `rejectedon_date`,  `withdrawnon_date`,  `activatedon_date`,  `closedon_date`,  `start_interest_calculation_date`,  `lockedin_until_date_derived`,    `currency_code`,  `currency_digits`,  `currency_multiplesof`,    `nominal_annual_interest_rate`,  `interest_compounding_period_enum`,  `interest_posting_period_enum`,  `interest_calculation_type_enum`,  `interest_calculation_days_in_year_type_enum`,    `min_required_opening_balance`,  `lockin_period_frequency`,  `lockin_period_frequency_enum`,  `withdrawal_fee_for_transfer`,  `allow_overdraft`,  `overdraft_limit`,  `nominal_annual_interest_rate_overdraft`,  `min_overdraft_for_interest_calculation`,    `total_deposits_derived`, 
+	`total_withdrawals_derived`,  `total_withdrawal_fees_derived`,  `total_fees_charge_derived`,  `total_penalty_charge_derived`,  `total_annual_fees_derived`,  `total_interest_earned_derived`,  `total_interest_posted_derived`,  `total_overdraft_interest_derived`,  `account_balance_derived`,    `min_required_balance`,  `enforce_min_required_balance`,  `min_balance_for_interest_calculation`,  `on_hold_funds_derived`,    `submittedon_userid`,  `approvedon_userid`,  `rejectedon_userid`,  `withdrawnon_userid`,  `activatedon_userid`,  `closedon_userid`
+);
+-- ================================
+SELECT
+  sa.encodedkey 			as `external_id`,
+  mc.id 					as `client_id`,
+  mg.id 					as `group_id`,
+  msp.id 					as `product_id`,
+  ms.id 					as `field_officer_id`,
+-- ----------------------------------------------------------------------------------------------------
+  1							as `account_type_enum`,
+  msp.deposit_type_enum 	as `deposit_type_enum`,
+-- ----------------------------------------------------------------------------------------------------  
+  sa.approveddate			as `submittedon_date`,
+  sa.approveddate			as `approvedon_date`,
+  null						as `rejectedon_date`,
+  null						as `withdrawnon_date`,
+  sa.activationdate			as `activatedon_date`,
+  sa.closeddate 				as `closedon_date`,
+  sa.activationdate			as `start_interest_calculation_date`,
+  null 						as `lockedin_until_date_derived`,
+-- ----------------------------------------------------------------------------------------------------  
+  msp.currency_code			as `currency_code`,
+  msp.currency_digits		as `currency_digits`,
+  msp.currency_multiplesof	as `currency_multiplesof`,
+-- ----------------------------------------------------------------------------------------------------  
+  sa.interestrate						as `nominal_annual_interest_rate`,
+  msp.interest_compounding_period_enum  as `interest_compounding_period_enum`,
+  msp.interest_posting_period_enum 		as`interest_posting_period_enum`,
+  msp.interest_calculation_type_enum 	as `interest_calculation_type_enum`,
+  msp.interest_calculation_days_in_year_type_enum
+										as `interest_calculation_days_in_year_type_enum`,
+-- ----------------------------------------------------------------------------------------------------  
+  msp.min_required_opening_balance 		as `min_required_opening_balance`,
+  msp.lockin_period_frequency 			as `lockin_period_frequency`,
+  msp.lockin_period_frequency_enum 		as `lockin_period_frequency_enum`,
+  msp.withdrawal_fee_for_transfer 		as `withdrawal_fee_for_transfer`,
+  msp.allow_overdraft 					as `allow_overdraft`,
+  msp.overdraft_limit 					as `overdraft_limit`,
+  msp.nominal_annual_interest_rate_overdraft as `nominal_annual_interest_rate_overdraft`,
+  msp.min_overdraft_for_interest_calculation as 	`min_overdraft_for_interest_calculation`,
+-- ----------------------------------------------------------------------------------------------------  
+  0 									as `total_deposits_derived`,
+  0 									as `total_withdrawals_derived`,
+  0 									as `total_withdrawal_fees_derived`,
+  0 									as `total_fees_charge_derived`,
+  0 									as `total_penalty_charge_derived`,
+  0 									as `total_annual_fees_derived`,
+  0 									as `total_interest_earned_derived`,
+  0 									as `total_interest_posted_derived`,
+  0 									as `total_overdraft_interest_derived`,
+  0 									as `account_balance_derived`,
+-- ----------------------------------------------------------------------------------------------------  
+  msp.min_required_balance  			as `min_required_balance`,
+  msp.enforce_min_required_balance 		as `enforce_min_required_balance`,
+  msp.min_balance_for_interest_calculation as `min_balance_for_interest_calculation`,
+  null						 			as `on_hold_funds_derived`,
+-- ----------------------------------------------------------------------------------------------------  
+  1 									as `submittedon_userid`,
+  1										as `approvedon_userid`,
+  null 									as `rejectedon_userid`,
+  null 									as `withdrawnon_userid`,
+  1										as `activatedon_userid`,
+  null 									as `closedon_userid`
+ /* 
+from
+	input_db.savingsaccount sa
+left join `mifostenant-default`.m_group mg on mg.external_id = sa.ACCOUNTHOLDERKEY 
+left join `mifostenant-default`.m_client mc on mc.external_id = sa.ACCOUNTHOLDERKEY 
+left join `mifostenant-default`.m_staff ms on ms.external_id = sa.ASSIGNEDUSERKEY
+left join `mifostenant-default`.m_savings_product msp on msp.description = sa.PRODUCTTYPEKEY
+*/
+
+from 	
+;
+
+
+;
+SELECT * FROM `mifostenant-default`.m_savings_account;  
+  
+UPDATE
+    `mifostenant-default`.`m_savings_account`
+SET
+    account_no = id
+WHERE
+    id <> '';
