@@ -632,7 +632,7 @@ select
     lt.ENCODEDKEY,
     lt.PARENTACCOUNTKEY,
     lt.AMOUNT,
-    DATE_FORMAT(date(lt.CREATIONDATE), '%d/%m/%Y') as date,
+    DATE_FORMAT(date(lt.entrydate), '%d/%m/%Y') as date,
     ifnull(lt.REVERSALTRANSACTIONKEY,'') as reversalKey,
     la.REPAYMENTINSTALLMENTS,
 	ml.id
@@ -832,7 +832,7 @@ select
     lt.ENCODEDKEY,
     lt.PARENTACCOUNTKEY,
     lt.AMOUNT,
-    DATE_FORMAT(date(lt.CREATIONDATE), '%d/%m/%Y') as date,
+    DATE_FORMAT(date(lt.entrydate), '%d/%m/%Y') as date,
     ifnull(lt.REVERSALTRANSACTIONKEY,'') as reversalKey,
     la.REPAYMENTINSTALLMENTS,
 	ml.id
@@ -925,15 +925,21 @@ set
 -- CREATE SAVINGS ACCOUNTS
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
+ALTER TABLE `mifostenant-default`.`m_savings_account` 
+CHANGE COLUMN `account_no` `account_no` VARCHAR(20) NULL COMMENT '' ,
+DROP INDEX `account_no_UNIQUE` ;
+
+ALTER TABLE `mifostenant-default`.`m_savings_account` 
+CHANGE COLUMN `account_no` `account_no` VARCHAR(20) NULL COMMENT '' ,
+DROP INDEX `sa_account_no_UNIQUE` ;
 
 
 INSERT into `mifostenant-default`.m_savings_account
-VALUES
 (
 	`external_id`,  `client_id`,  `group_id`,  `product_id`,  `field_officer_id`,    `account_type_enum`,  `deposit_type_enum`,    `submittedon_date`,  `approvedon_date`,  `rejectedon_date`,  `withdrawnon_date`,  `activatedon_date`,  `closedon_date`,  `start_interest_calculation_date`,  `lockedin_until_date_derived`,    `currency_code`,  `currency_digits`,  `currency_multiplesof`,    `nominal_annual_interest_rate`,  `interest_compounding_period_enum`,  `interest_posting_period_enum`,  `interest_calculation_type_enum`,  `interest_calculation_days_in_year_type_enum`,    `min_required_opening_balance`,  `lockin_period_frequency`,  `lockin_period_frequency_enum`,  `withdrawal_fee_for_transfer`,  `allow_overdraft`,  `overdraft_limit`,  `nominal_annual_interest_rate_overdraft`,  `min_overdraft_for_interest_calculation`,    `total_deposits_derived`, 
 	`total_withdrawals_derived`,  `total_withdrawal_fees_derived`,  `total_fees_charge_derived`,  `total_penalty_charge_derived`,  `total_annual_fees_derived`,  `total_interest_earned_derived`,  `total_interest_posted_derived`,  `total_overdraft_interest_derived`,  `account_balance_derived`,    `min_required_balance`,  `enforce_min_required_balance`,  `min_balance_for_interest_calculation`,  `on_hold_funds_derived`,    `submittedon_userid`,  `approvedon_userid`,  `rejectedon_userid`,  `withdrawnon_userid`,  `activatedon_userid`,  `closedon_userid`
-);
--- ================================
+)
+
 SELECT
   sa.encodedkey 			as `external_id`,
   mc.id 					as `client_id`,
@@ -995,25 +1001,136 @@ SELECT
   null 									as `withdrawnon_userid`,
   1										as `activatedon_userid`,
   null 									as `closedon_userid`
- /* 
+  
 from
 	input_db.savingsaccount sa
 left join `mifostenant-default`.m_group mg on mg.external_id = sa.ACCOUNTHOLDERKEY 
 left join `mifostenant-default`.m_client mc on mc.external_id = sa.ACCOUNTHOLDERKEY 
 left join `mifostenant-default`.m_staff ms on ms.external_id = sa.ASSIGNEDUSERKEY
 left join `mifostenant-default`.m_savings_product msp on msp.description = sa.PRODUCTTYPEKEY
-*/
+where
+    sa.ASSIGNEDBRANCHKEY = '8a2b82e6455edd890145bbc90f6c75af'
+;
 
-from 	
+-- Fix a few things
+UPDATE `mifostenant-default`.`m_savings_account`
+SET account_no = id
+WHERE id <> '';
+   
+
+
+ALTER TABLE `mifostenant-default`.`m_savings_account` 
+CHANGE COLUMN `account_no` `account_no` VARCHAR(20) NOT NULL COMMENT '' ,
+ADD UNIQUE INDEX `account_no_UNIQUE` (`account_no` ASC)  COMMENT '';
+
+
+-- ----------------------------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------------------------------
+-- 	BACKDATE DATES TO AVOID API ISSUES
+-- ----------------------------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------------------------------
+update `mifostenant-default`.m_client
+set 
+	activation_date = DATE_SUB(activation_date , INTERVAL 100 YEAR),
+	office_joining_date = DATE_SUB(office_joining_date, INTERVAL 100 YEAR)
+;
+    
+update `mifostenant-default`.m_savings_account
+set activatedon_date = DATE_SUB(activatedon_date, INTERVAL 100 YEAR)
 ;
 
 
+
+-- ----------------------------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------------------------------
+-- 	GET SAVIGNS TRANSACTIONS 
+-- ----------------------------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------------------------------
+select
+    st.TYPE,
+    st.ENCODEDKEY,
+    st.PARENTACCOUNTKEY,
+    st.AMOUNT,
+    DATE_FORMAT(date(st.CREATIONDATE), '%d/%m/%Y') as date,
+    ifnull(st.REVERSALTRANSACTIONKEY,'') as reversalKey,
+	msa.id
+from
+    input_db.savingstransaction st,
+    input_db.savingsaccount sa,
+    `mifostenant-default`.m_savings_account msa
+where
+    st.parentaccountkey = sa.encodedkey
+    and msa.external_id = sa.ENCODEDKEY
+    and sa.ENCODEDKEY = st.PARENTACCOUNTKEY
+    and sa.ASSIGNEDBRANCHKEY = '8a2b82e6455edd890145bbc90f6c75af'
+order by st.parentaccountkey asc, st.creationdate asc
+ ;
+-- ----------------------------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------------------------------
+-- 	REVERT DATES 
+-- ----------------------------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------------------------------
+update `mifostenant-default`.m_client
+set 
+	activation_date = date_add(activation_date , INTERVAL 100 YEAR),
+	office_joining_date = date_add(office_joining_date, INTERVAL 100 YEAR)
 ;
-SELECT * FROM `mifostenant-default`.m_savings_account;  
-  
-UPDATE
-    `mifostenant-default`.`m_savings_account`
-SET
-    account_no = id
-WHERE
-    id <> '';
+    
+update `mifostenant-default`.m_savings_account
+set activatedon_date = date_add(activatedon_date, INTERVAL 100 YEAR)
+;
+
+-- ----------------------------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------------------------------
+-- 	FIX INTERST NUMBER HACK
+-- ----------------------------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------------------------------
+update `mifostenant-default`.m_savings_account_transaction mst
+join `mifostenant-default`.m_payment_detail mpd on mpd.id = mst.payment_detail_id
+set 
+	mst.transaction_type_enum = 3,
+    overdraft_amount_derived = null, 
+	balance_end_date_derived = null, 
+	balance_number_of_days_derived = null, 
+	cumulative_balance_derived = null 
+;
+-- ----------------------------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------------------------------
+-- 	FIX ID ISSUES 
+-- ----------------------------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------------------------------
+-- people
+update `mifostenant-default`.m_client mc
+join input_db.`client` c on mc.external_id = c.encodedkey
+set mc.external_id = c.id
+;
+
+-- groups
+update `mifostenant-default`.m_group mc
+join input_db.`group` c on mc.external_id = c.encodedkey
+set mc.external_id = c.id
+;
+
+-- centers
+update `mifostenant-default`.m_group mc
+join input_db.`centre` c on mc.external_id = c.encodedkey
+set mc.external_id = c.id
+;
+
+-- loan accounts
+update `mifostenant-default`.m_loan mc
+join input_db.`loanaccount` c on mc.external_id = c.encodedkey
+set mc.external_id = c.id
+;
+
+-- savings accounts
+update `mifostenant-default`.m_savings_account mc
+join input_db.`savingsaccount` c on mc.external_id = c.encodedkey
+set mc.external_id = c.id
+;
+
+-- get savings transactions
+-- fix entry date issue
+-- 
+
+
