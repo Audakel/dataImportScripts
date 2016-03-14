@@ -20,6 +20,10 @@
     - make a python script to make a temp table to clean up reversal keys - then migrate that table
     - _derived fields in m_loan such as fees_written_off_derived needs updating, but how do we calculate that?
     - what do we do about transaction type REPAYMENT_ADJUSTMENT
+    - Interest problems:
+		-Fix 0000-00-00 date problem in savings account approval date 
+        -Why are some of the interest jobs still failing
+        -Set the date to start calculating interest to be today
 */
 
 
@@ -102,7 +106,6 @@ WHERE
     OR firstname = "Cole"
 limit 500
 ;
-
 
 -- Put all the default TBD stuff in
 INSERT INTO `mifostenant-default`.`m_staff`
@@ -274,8 +277,15 @@ ADD UNIQUE INDEX `account_no_UNIQUE` (`account_no` ASC);
 -- Center Migration
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
+UPDATE `input_db`.`centre` SET `NAME`='SAN BARTOLOME' WHERE `ENCODEDKEY`='8a68b6e44b570fa1014b58c0e71d4a77';
+UPDATE `input_db`.`centre` SET `NAME`='SAN BARTOLOME (2)' WHERE `ENCODEDKEY`='8a8189865327144b01532bd18ff11e17';
+UPDATE `input_db`.`centre` SET `NAME`='SAN BARTOLOME 1-A (2)' WHERE `ENCODEDKEY`='8a68b6e44b570fa1014b58c0e7534a87';
+UPDATE `input_db`.`centre` SET `NAME`='SAN BARTOLOME 1-A' WHERE `ENCODEDKEY`='8a8189865327144b01532bb4eb6715a0';
+UPDATE `input_db`.`centre` SET `NAME`='SAN BARTOLOME 2 (2)' WHERE `ENCODEDKEY`='8a68b6e44b570fa1014b58c0e72e4a7b';
+
+
 update input_db.`centre`
-set name = concat(name, ' (2)')
+set name = concat(name, ' (3)')
 where name in
 (
     SELECT name
@@ -285,6 +295,9 @@ where name in
 )
 limit 10000
 ;
+SELECT * from input_db.`centre`;
+
+DELETE from `input_db`.`centre` where name like '%Test Center%';
 
 SELECT * from  `input_db`.`centre`;
 -- Error Code: 1062. Duplicate entry 'ILANG-ILANG-1' for key 'name'
@@ -933,6 +946,8 @@ ALTER TABLE `mifostenant-default`.`m_savings_account`
 CHANGE COLUMN `account_no` `account_no` VARCHAR(20) NULL COMMENT '' ,
 DROP INDEX `sa_account_no_UNIQUE` ;
 
+update `mifostenant-default`.m_savings_product
+set currency_digits = 2;
 
 INSERT into `mifostenant-default`.m_savings_account
 (
@@ -955,12 +970,12 @@ SELECT
   null						as `rejectedon_date`,
   null						as `withdrawnon_date`,
   sa.activationdate			as `activatedon_date`,
-  sa.closeddate 				as `closedon_date`,
-  sa.activationdate			as `start_interest_calculation_date`,
+  sa.closeddate 			as `closedon_date`,
+  null						as `start_interest_calculation_date`,
   null 						as `lockedin_until_date_derived`,
 -- ----------------------------------------------------------------------------------------------------  
   msp.currency_code			as `currency_code`,
-  msp.currency_digits		as `currency_digits`,
+  2							as `currency_digits`,
   msp.currency_multiplesof	as `currency_multiplesof`,
 -- ----------------------------------------------------------------------------------------------------  
   sa.interestrate						as `nominal_annual_interest_rate`,
@@ -1035,23 +1050,26 @@ set
 	office_joining_date = DATE_SUB(office_joining_date, INTERVAL 100 YEAR)
 ;
     
-update `mifostenant-default`.m_savings_account
-set activatedon_date = DATE_SUB(activatedon_date, INTERVAL 100 YEAR)
+ update `mifostenant-default`.m_savings_account
+ set activatedon_date = DATE_SUB(activatedon_date, INTERVAL 100 YEAR)
+ where approvedon_date is not null
 ;
-
-
 
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
 -- 	GET SAVIGNS TRANSACTIONS 
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
+INSERT INTO `mifostenant-default`.`m_payment_type` 
+(`id`, `value`, `description`, `is_cash_payment`) 
+VALUES ('2', 'Interest Hack', 'Hack', '0');
+
 select
     st.TYPE,
     st.ENCODEDKEY,
     st.PARENTACCOUNTKEY,
     st.AMOUNT,
-    DATE_FORMAT(date(st.CREATIONDATE), '%d/%m/%Y') as date,
+    DATE_FORMAT(date(st.entrydate), '%d/%m/%Y') as date,
     ifnull(st.REVERSALTRANSACTIONKEY,'') as reversalKey,
 	msa.id
 from
@@ -1089,11 +1107,25 @@ update `mifostenant-default`.m_savings_account_transaction mst
 join `mifostenant-default`.m_payment_detail mpd on mpd.id = mst.payment_detail_id
 set 
 	mst.transaction_type_enum = 3,
-    overdraft_amount_derived = null, 
-	balance_end_date_derived = null, 
-	balance_number_of_days_derived = null, 
-	cumulative_balance_derived = null 
+    mst.overdraft_amount_derived = null, 
+	-- mst.balance_end_date_derived = null, 
+	-- mst.balance_number_of_days_derived = null, 
+	mst.cumulative_balance_derived = null 
+where mpd.payment_type_id = 2;
+
+-- ----------------------------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------------------------------
+-- 	FIX MIN ALOWED BALANCE 
+-- ----------------------------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------------------------------
+update `mifostenant-default`.m_savings_account
+set min_balance_for_interest_calculation = 1000
 ;
+
+update `mifostenant-default`.m_savings_product
+set min_balance_for_interest_calculation = 1000
+;
+
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
 -- 	FIX ID ISSUES 
@@ -1111,7 +1143,7 @@ join input_db.`group` c on mc.external_id = c.encodedkey
 set mc.external_id = c.id
 ;
 
--- centers
+-- centers -> may have issues with double ids
 update `mifostenant-default`.m_group mc
 join input_db.`centre` c on mc.external_id = c.encodedkey
 set mc.external_id = c.id

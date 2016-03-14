@@ -207,9 +207,9 @@ SELECT
 from 
 	guatemala.client c
 	left join guatemala.branch b on c.ASSIGNEDBRANCHKEY = b.ENCODEDKEY
-    left join `mifostenant-default`.m_office o on o.external_id = b.id
+    left join `mifostenant-default`.m_office o on o.external_id = b.encodedkey
 	left join guatemala.user s   on c.ASSIGNEDUSERKEY   = s.ENCODEDKEY
-    left join `mifostenant-default`.m_staff ms on s.id = ms.external_id
+    left join `mifostenant-default`.m_staff ms on s.encodedkey = ms.external_id
     left join
     (
 		SELECT * FROM (
@@ -669,18 +669,21 @@ order by
      phr.PARENTACCOUNTKEY, phr.duedate
 ;
 
+
 SET SQL_SAFE_UPDATES = 0;
-CREATE TEMPORARY TABLE IF NOT EXISTS `mifostenant-default`.table2 AS (
-SELECT id, loan_id as l, duedate as d, 
+
+drop table `mifostenant-default`.table2 ;
+
+CREATE TEMPORARY TABLE IF NOT EXISTS `mifostenant-default`.table2 AS 
 (
-select COUNT(*) + 1 from  `mifostenant-default`.`m_loan_repayment_schedule`
-
-where loan_id = l
-and duedate < d
-) as c 
-FROM `mifostenant-default`.`m_loan_repayment_schedule`
-
-group by id
+	SELECT id, loan_id as l, duedate as d, 
+	(
+		select COUNT(*) + 1 from  `mifostenant-default`.`m_loan_repayment_schedule`
+		where loan_id = l
+		and duedate < d
+	) as c 
+	FROM `mifostenant-default`.`m_loan_repayment_schedule`
+	group by id
 );
 
 
@@ -707,7 +710,7 @@ UPDATE `mifostenant-default`.m_loan ml
 join `mifostenant-default`.table3 t3 on t3.PARENTACCOUNTKEY = ml.external_id
 set ml.interest_charged_derived = t3.interest   
 ;
-SET SQL_SAFE_UPDATES = 1;
+SET SQL_SAFE_UPDATES = 0;
 
 
 -- ----------------------------------------------------------------------------------------------------
@@ -844,11 +847,41 @@ order by glt.ENTRYDATE, glt.creationdate
 ;
 
 
-update `mifostenant-default`.m_loan
-set ()
-	
+
+-- ----------------------------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------------------------------
+-- 	FIX ID ISSUES 
+-- ----------------------------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------------------------------
+SET SQL_SAFE_UPDATES = 0;
 
 
-select * from guatemala.loantransaction where type = 'REPAYMENT'; -- 8023
-select * from guatemala.loantransaction where type = 'REPAYMENT' and BRANCHKEY is null; -- 0
-select * from guatemala.loantransaction where type = 'REPAYMENT' and PARENTACCOUNTKEY is null; -- 0
+-- people
+update `mifostenant-default`.m_client mc
+join guatemala.`client` c on mc.external_id = c.encodedkey
+set mc.external_id = c.id
+;
+
+-- groups
+update `mifostenant-default`.m_group mc
+join guatemala.`group` c on mc.external_id = c.encodedkey
+set mc.external_id = c.id
+;
+
+-- centers -> may have issues with double ids
+update `mifostenant-default`.m_group mc
+join guatemala.`centre` c on mc.external_id = c.encodedkey
+set mc.external_id = c.id
+;
+
+-- loan accounts
+update `mifostenant-default`.m_loan mc
+join guatemala.`loanaccount` c on mc.external_id = c.encodedkey
+set mc.external_id = c.id
+;
+
+-- savings accounts
+update `mifostenant-default`.m_savings_account mc
+join guatemala.`savingsaccount` c on mc.external_id = c.encodedkey
+set mc.external_id = c.id
+;
