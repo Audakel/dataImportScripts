@@ -178,16 +178,20 @@ ALTER TABLE `mifostenant-default`.`m_client`
 CHANGE COLUMN `account_no` `account_no` VARCHAR(20) NULL ,
 DROP INDEX `account_no_UNIQUE` ;
 
+ALTER TABLE `mifostenant-default`.`m_client` 
+DROP INDEX `mobile_no_UNIQUE` ;
 
 INSERT INTO `mifostenant-default`.`m_client` 
 	(
-		`external_id`, `status_enum`, `activation_date`, `office_id`, `staff_id`, 
+		`external_id`, `status_enum`, `mobile_no`, `activation_date`, `office_id`, `staff_id`, 
 		`firstname`, `middlename`, `lastname`, `display_name`, `submittedon_userid`, 
 		`activatedon_userid`
     ) 
 SELECT 
     c.encodedkey                     as EXTERNAL_ID,
     300							 	 as status_enum,
+    if(c.MOBILEPHONE1 = '0',
+		null,c.mobilephone1) as mobile_no,
     DATE_FORMAT(date(LEAST(
 		coalesce(c.CREATIONDATE, CURDATE()),
         coalesce(c.APPROVEDDATE, CURDATE()),
@@ -204,6 +208,7 @@ SELECT
         c.LASTNAME)					 as DISPLAY_NAME,
 	1 								 as submittedon_userid,
     1 								 as activatedon_userid
+				
 from 
 	guatemala.client c
 	left join guatemala.branch b on c.ASSIGNEDBRANCHKEY = b.ENCODEDKEY
@@ -235,6 +240,18 @@ set
     office_joining_date = activation_date,
     submittedon_date = activation_date
 where id <> ''
+;
+
+-- Update address
+insert into `mifostenant-default`.m_note
+(client_id, note, note_type_enum)
+select
+	c.id 										    	as client_id,
+    concat('Address \n', a.line1, '\n', a.line2, 
+		'\n', a.city, ' ', a.country, ' ', a.region) 	as note,
+	100 												as note_type_enum
+from `mifostenant-default`.m_client as c
+left join `guatemala`.address a on c.external_id = a.encodedkey
 ;
 
 
@@ -588,54 +605,6 @@ left join guatemala.loanaccount gla on ml.external_id = gla.encodedkey
 left join `mifostenant-default`.m_office mo on gla.assignedbranchkey = mo.external_id
 ;
 
-
--- ----------------------------------------------------------------------------------------------------
--- ----------------------------------------------------------------------------------------------------
--- FEES
--- ----------------------------------------------------------------------------------------------------
--- ----------------------------------------------------------------------------------------------------
-
-select * from `mifostenant-default`.m_loan_transaction; -- 5358
-
-select
-    lt.TYPE,
-    lt.ENCODEDKEY,
-    lt.PARENTACCOUNTKEY,
-    lt.AMOUNT,
-    DATE_FORMAT(date(lt.CREATIONDATE), '%d/%m/%Y') as date,
-    ifnull(lt.REVERSALTRANSACTIONKEY,'') as reversalKey,
-    la.REPAYMENTINSTALLMENTS,
-	ml.id
-from
-    guatemala.loantransaction lt,
-    guatemala.loanaccount la,
-    `mifostenant-default`.m_loan ml
-where
-    lt.parentaccountkey = la.encodedkey
-    and ml.external_id = la.ENCODEDKEY
-    and la.ENCODEDKEY = lt.PARENTACCOUNTKEY
-    and lt.type not like '%INTEREST%'
-order by lt.parentaccountkey asc, lt.creationdate asc
-
-
- ;
-
-    -- la.ACCOUNTSTATE like '%CLOSED%'
-	-- la.accountholdertype = 'GROUP'
-	-- lt.parentaccountkey= '8a9d7e284b75fe4b014b7a05572a0b1b' or
-	-- lt.parentaccountkey= '8a9c4d8c4c2a3654014c2da9018a6e9e' or
-	-- lt.parentaccountkey= '8a36219649e44d120149e8c4c86f50fa' or
-	-- lt.parentaccountkey= '8a9d992d4c1acee0014c2ed7d6cb14ad' or
-	-- lt.parentaccountkey= '8a10d7894b2f253a014b317dcb8e0e0d' or
-	-- lt.parentaccountkey= '8a9c4d8c4c2a3654014c2d8dd19c45ec' or
-	-- lt.parentaccountkey= '8aa85edc4ae70c4a014aefac6cbf5b03' or
-	-- closed
-	-- lt.parentaccountkey= '8a9d992d4c1acee0014c2ed7d6cb14ad' or
-	-- lt.parentaccountkey= '8a36219649e44d120149e8c4c86f50fa' or
-	-- lt.parentaccountkey= '8a8188ae51f3d72d0151f90675461d5f'
-
-
-
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
 -- LOAN SCHEDULE UPDATE
@@ -644,14 +613,14 @@ order by lt.parentaccountkey asc, lt.creationdate asc
 
 INSERT INTO `mifostenant-default`.`m_loan_repayment_schedule`
 (
-    `loan_id`, `duedate`, `principal_amount`,
+    `loan_id`, `fee_charges_amount`, `duedate`, `principal_amount`,
     `interest_amount`, `completed_derived`, `createdby_id`,
     `created_date`, `lastmodified_date`, `lastmodifiedby_id`, `recalculated_interest_component`
-
  )
 
 SELECT
 	ml.id				                                as loan_id,
+    phr.feesdue											as fee_charges_amount,
     DATE_FORMAT(date(phr.DUEDATE), '%Y-%m-%d')         	as duedate,
     phr.PRINCIPALDUE                                 	as principal_amount,
     phr.INTERESTDUE                                     as interest_amount,
@@ -672,7 +641,7 @@ order by
 
 SET SQL_SAFE_UPDATES = 0;
 
-drop table `mifostenant-default`.table2 ;
+drop table if exists`mifostenant-default`.table2 ;
 
 CREATE TEMPORARY TABLE IF NOT EXISTS `mifostenant-default`.table2 AS 
 (
@@ -692,6 +661,33 @@ JOIN `mifostenant-default`.table2 t2 on t2.id = `mifostenant-default`.`m_loan_re
 SET installment = t2.c
 where `mifostenant-default`.m_loan_repayment_schedule.created_date <> ''
 ;
+
+-- ----------------------------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------------------------------
+-- FEES
+-- ----------------------------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------------------------------
+select
+    lt.TYPE,
+    lt.ENCODEDKEY,
+    lt.PARENTACCOUNTKEY,
+    lt.AMOUNT,
+    DATE_FORMAT(date(lt.CREATIONDATE), '%d/%m/%Y') as date,
+    ifnull(lt.REVERSALTRANSACTIONKEY,'') as reversalKey,
+    la.REPAYMENTINSTALLMENTS,
+	ml.id
+from
+    guatemala.loantransaction lt,
+    guatemala.loanaccount la,
+    `mifostenant-default`.m_loan ml
+where
+    lt.parentaccountkey = la.encodedkey
+    and ml.external_id = la.ENCODEDKEY
+    and la.ENCODEDKEY = lt.PARENTACCOUNTKEY
+    and lt.type not like '%INTEREST%'
+order by lt.parentaccountkey asc, lt.creationdate asc
+ ;
+
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
 -- GET CORRECT INTEREST
@@ -745,18 +741,9 @@ SET
 ;
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
--- ?
+-- REPAYMENTS
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
-SELECT * from guatemala.loantransaction where type = 'REPAYMENT';
-SELECT * from `mifostenant-default`.m_loan_transaction where transaction_type_enum = 2;
--- 40 sec 1300 ->32
--- 50 1600 ->32
-
-SELECT avg(REPAYMENTINSTALLMENTS) from guatemala.loanaccount
-union
-SELECT avg(REPAYMENTINSTALLMENTS) from phil20160204.loanaccount;
-
 select
     lt.TYPE,
     lt.ENCODEDKEY,

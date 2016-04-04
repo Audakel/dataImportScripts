@@ -111,13 +111,16 @@ def process_loan(historyDirty):
                     "transactionDate": formatDate(transaction.creation)
                 }
                 res = requests.post(API_URL+ '/loans/{}/transactions?command=repayment'.format(loanid), headers=auth_token, json=data, verify=False, timeout=10).json()
-                # last_repayment = {'id': res['resourceId'], 'amount': transaction.amount}
+                try:
+                    good = res['changes']
+                except:
+                    print("\nloan id: ", loanid, "err res: ",res)# last_repayment = {'id': res['resourceId'], 'amount': transaction.amount}
 
 
 
             errHandle(res, parent, transaction) 
     except Exception as e:
-        print('wee woo we ded', e)
+        print('wee woo we ded', e ,"loan id: ", loanid, "\n", data)
     # print('PID', pid, 'ending parent loan', parent)
         
         
@@ -150,13 +153,13 @@ def main():
             if current_parent != tran.parent:
                 # change the following line to process_loan(history) to remove threading
                 executor.submit(process_loan, history)
-                #process_loan(history)
+                # process_loan(history)
                 history = []
             current_parent = tran.parent
             ignore = []
             history.append(tran)
         executor.submit(process_loan, history)
-        #process_loan(history)
+        # process_loan(history)
         executor.shutdown()
         print('\n\nDONE!!!!\n\n')
 
