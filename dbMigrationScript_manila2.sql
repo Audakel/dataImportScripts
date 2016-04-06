@@ -207,16 +207,20 @@ ALTER TABLE `mifostenant-default`.`m_client`
 CHANGE COLUMN `account_no` `account_no` VARCHAR(20) NULL ,
 DROP INDEX `account_no_UNIQUE` ;
 
+ALTER TABLE `mifostenant-default`.`m_client` 
+DROP INDEX `mobile_no_UNIQUE` ;
 
 INSERT INTO `mifostenant-default`.`m_client`
     (
-        `external_id`, `status_enum`, `activation_date`, `office_id`, `staff_id`,
+        `external_id`, `status_enum`, `mobile_no`, `activation_date`, `office_id`, `staff_id`,
         `firstname`, `middlename`, `lastname`, `display_name`, `submittedon_userid`,
         `activatedon_userid`
     )
 SELECT
     c.encodedkey                     as EXTERNAL_ID,
     300                              as status_enum,
+	if(c.MOBILEPHONE1 = '0',
+		null,c.mobilephone1) as mobile_no,
     DATE_FORMAT(date(LEAST(
         coalesce(c.CREATIONDATE, CURDATE()),
         coalesce(c.APPROVEDDATE, CURDATE()),
@@ -267,6 +271,20 @@ where id <> ''
 ;
 
 
+-- Update address
+insert into `mifostenant-default`.m_note
+(client_id, note, note_type_enum)
+select
+	c.id 										    	as client_id,
+     concat('Address: ', a.line1, ' ', a.line2, 
+ 		', ', a.city, ', ', a.country, ', ', a.region) 	as note,
+
+	100 												as note_type_enum
+from `mifostenant-default`.m_client c 
+left join `input_db`.address a 
+on a.parentkey = c.external_id 
+;
+
 ALTER TABLE `mifostenant-default`.`m_client`
 CHANGE COLUMN `account_no` `account_no` VARCHAR(20) NOT NULL ,
 ADD UNIQUE INDEX `account_no_UNIQUE` (`account_no` ASC);
@@ -282,6 +300,7 @@ UPDATE `input_db`.`centre` SET `NAME`='SAN BARTOLOME (2)' WHERE `ENCODEDKEY`='8a
 UPDATE `input_db`.`centre` SET `NAME`='SAN BARTOLOME 1-A (2)' WHERE `ENCODEDKEY`='8a68b6e44b570fa1014b58c0e7534a87';
 UPDATE `input_db`.`centre` SET `NAME`='SAN BARTOLOME 1-A' WHERE `ENCODEDKEY`='8a8189865327144b01532bb4eb6715a0';
 UPDATE `input_db`.`centre` SET `NAME`='SAN BARTOLOME 2 (2)' WHERE `ENCODEDKEY`='8a68b6e44b570fa1014b58c0e72e4a7b';
+UPDATE `input_db`.`centre` SET `NAME`='ARIENDA (2)' WHERE `ENCODEDKEY`='8a62dddb4b51f19d014b6b17f5633475';
 
 
 update input_db.`centre`
@@ -309,24 +328,7 @@ INSERT INTO `mifostenant-default`.`m_group`
         `external_id`, `status_enum`, `activation_date`, `office_id`, `staff_id`, `level_id`,
         `display_name`, `activatedon_userid`, `submittedon_date`, `submittedon_userid`
     )
--- SELECT
---     b.encodedkey                          as external_id,
---     300                                   as status_enum,
---     DATE_FORMAT(date(
---         b.CREATIONDATE), '%Y-%m-%d')      as ACTIVATION_DATE,
---     1                                     as OFFICE_ID,
---     1                                     as STAFF_ID,                           
---     1                                     as level_id,
---     concat('CENTER TBD','(', b.name, ')') as DISPLAY_NAME,
---     1                                     as activatedon_userid,
---     DATE_FORMAT(date(
---         b.CREATIONDATE), '%Y-%m-%d')      as submittedon_date,
---     1                                     as submittedon_userid
--- from
---     input_db.branch b
--- left join
---     `mifostenant-default`.m_office mo on mo.external_id = b.id
--- UNION
+
 select
     c.ENCODEDKEY                         as external_id,
     300                                     as status_enum,
@@ -376,12 +378,21 @@ where id in
 limit 10000
 ;
 
+-- '18459'
+-- '012786216'
+-- 'CEBU-1161'
+SELECT * from input_db.`group`;
 
 UPDATE `input_db`.`group` SET `GROUPNAME`='CEBU-1162 (3)' WHERE `ENCODEDKEY`='8a8188bc52849d6401528c45516b742a';
 UPDATE `input_db`.`group` SET `GROUPNAME`=id WHERE `id`='094646451';
 UPDATE `input_db`.`group` SET `GROUPNAME`=id WHERE `id`='18426';
 UPDATE `input_db`.`group` SET `GROUPNAME`=id WHERE `id`='639521806';
 UPDATE `input_db`.`group` SET `GROUPNAME`=id WHERE `groupname`='ILANG-ILANG';
+UPDATE `input_db`.`group` SET `GROUPNAME`='18459 (3)' WHERE `ENCODEDKEY`='8a10ca994b09d039014b15ca757c7fbe';
+UPDATE `input_db`.`group` SET `GROUPNAME`='18459 (4)' WHERE `ENCODEDKEY`='8a1a2d044f7082b8014f72f9e2814787';
+UPDATE `input_db`.`group` SET `GROUPNAME`='18462 (3)' WHERE `ENCODEDKEY`='8a2abc564c491a32014c49c5a4ac0ed3';
+UPDATE `input_db`.`group` SET `GROUPNAME`='CEBU-1162 (3)' WHERE `ENCODEDKEY`='8a68cf2a4bcd8217014be89e6c7f2c82';
+UPDATE `input_db`.`group` SET `GROUPNAME`='CEBU-1162 (4)' WHERE `ENCODEDKEY`='8a8188bc52849d6401528c45516b742a';
 
 
 INSERT INTO `mifostenant-default`.`m_group`
@@ -827,7 +838,7 @@ SET
 
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
--- REPAYMENTS
+-- REPAYMENTS (MAKE BACKUP B
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
 SELECT * FROM `mifostenant-default`.m_loan_transaction 

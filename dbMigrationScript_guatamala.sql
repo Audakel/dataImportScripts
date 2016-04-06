@@ -247,13 +247,17 @@ insert into `mifostenant-default`.m_note
 (client_id, note, note_type_enum)
 select
 	c.id 										    	as client_id,
-    concat('Address \n', a.line1, '\n', a.line2, 
-		'\n', a.city, ' ', a.country, ' ', a.region) 	as note,
+     concat('Address: ', a.line1, ' ', a.line2, 
+ 		', ', a.city, ', ', a.country, ', ', a.region) 	as note,
+
 	100 												as note_type_enum
-from `mifostenant-default`.m_client as c
-left join `guatemala`.address a on c.external_id = a.encodedkey
+from `mifostenant-default`.m_client c 
+left join `guatemala`.address a 
+on a.parentkey = c.external_id 
 ;
 
+SELECT * from `mifostenant-default`.m_client;
+SELECT * from `guatemala`.address;
 
 ALTER TABLE `mifostenant-default`.`m_client` 
 CHANGE COLUMN `account_no` `account_no` VARCHAR(20) NOT NULL ,
@@ -783,11 +787,7 @@ where
     and lt.`type` = 'FEE'
 order by lt.PARENTACCOUNTKEY, lt.CREATIONDATE	
 ;
-*/
-select * from guatemala.repayment;
-select * from guatemala.loantransaction where PARENTACCOUNTKEY = '8a10ca994b09d039014b0e1d85e56713';
-select * from guatemala.loanaccount where REPAYMENTINSTALLMENTS = 1;
-select * from guatemala.predefinedfeeamount;
+
 
 
 insert into 
@@ -833,13 +833,16 @@ AND glt.type = 'REPAYMENT'
 order by glt.ENTRYDATE, glt.creationdate 
 ;
 
-
+*/
 
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
 -- 	FIX ID ISSUES 
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
+update `mifostenant-default`.m_loan
+set loan_status_id = 600 where principal_outstanding_derived = 0;
+
 SET SQL_SAFE_UPDATES = 0;
 
 
@@ -848,6 +851,12 @@ update `mifostenant-default`.m_client mc
 join guatemala.`client` c on mc.external_id = c.encodedkey
 set mc.external_id = c.id
 ;
+
+-- revert people
+-- update `mifostenant-default`.m_client mc
+-- join guatemala.`client` c on mc.external_id = c.id
+-- set mc.external_id = c.encodedkey
+-- ;
 
 -- groups
 update `mifostenant-default`.m_group mc
