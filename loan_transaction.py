@@ -6,6 +6,8 @@ import requests
 import csv
 import simplejson as json
 import os
+import pymysql.cursors
+
 requests.packages.urllib3.disable_warnings()
 
 BASE_URL = 'https://localhost:8443'
@@ -16,6 +18,12 @@ auth_res = requests.post(API_URL + '/authentication?username=mifos&password=pass
 auth_token["Authorization"] = "Basic %s" %auth_res['base64EncodedAuthenticationKey']
 err_count = 0
 total_count = 0
+
+connection = pymysql.connect(host="localhost",    # your host, usually localhost
+                     user="root",         # your username
+                     passwd="mysql",  # your password
+                     db="mifostenant-default",
+                     cursorclass=pymysql.cursors.DictCursor)
 
 # loans = requests.get(API_URL + '/loans?limit=0', headers=auth_token, verify=False).json()
 
@@ -110,9 +118,18 @@ def process_loan(historyDirty):
                     "transactionAmount": transaction.amount,
                     "transactionDate": formatDate(transaction.creation)
                 }
+
+                # if transaction.loan_disbursement_date == "NULL":
+                #     with connection.cursor() as cursor:
+                #         cursor.execute("UPDATE m_loan set disbursedon_date = %s where id = %s;",(
+                #             transaction.loan_creation_date, transaction.mifos_id))
+
+                #     connection.commit()
+
                 res = requests.post(API_URL+ '/loans/{}/transactions?command=repayment'.format(loanid), headers=auth_token, json=data, verify=False, timeout=10).json()
                 try:
                     good = res['changes']
+                    print('.', end="")
                 except:
                     print("\nloan id: ", loanid, "err res: ",res)# last_repayment = {'id': res['resourceId'], 'amount': transaction.amount}
 
@@ -126,7 +143,8 @@ def process_loan(historyDirty):
         
 
 class Transaction():
-    def __init__(self, _type, key, parent, amount, creation, reversalKey, installments, mifos_id):
+    def __init__(self, _type, key, parent, amount, creation, reversalKey, installments, mifos_id, 
+        loan_disbursement_date, loan_creation_date):
         self._type = _type
         self.key = key
         self.parent = parent
@@ -134,7 +152,10 @@ class Transaction():
         self.creation = creation
         self.reversalKey = reversalKey
         self.installments = installments
-        self.mifos_id = mifos_id    
+        self.mifos_id = mifos_id
+        self.loan_disbursement_date = loan_disbursement_date  
+        self.loan_creation_date = loan_creation_date
+
     def __str__(self):
         return '{}, {}, {}, {}, {}, {}'.format(self._type, self.key,  self.parent, self.amount, self.creation, self.reversalKey, self.installments)
     def __repr__(self):
@@ -167,4 +188,8 @@ def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
     return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
             
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    finally:
+        if connection:
+            connection.close()
