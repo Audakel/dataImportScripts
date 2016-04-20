@@ -67,7 +67,7 @@ WHERE
 
 
 
--- Back date office openings
+-- Back date office openings to avoid api errors
 update
     `mifostenant-default`.m_office
 set
@@ -301,6 +301,7 @@ UPDATE `input_db`.`centre` SET `NAME`='SAN BARTOLOME 1-A (2)' WHERE `ENCODEDKEY`
 UPDATE `input_db`.`centre` SET `NAME`='SAN BARTOLOME 1-A' WHERE `ENCODEDKEY`='8a8189865327144b01532bb4eb6715a0';
 UPDATE `input_db`.`centre` SET `NAME`='SAN BARTOLOME 2 (2)' WHERE `ENCODEDKEY`='8a68b6e44b570fa1014b58c0e72e4a7b';
 UPDATE `input_db`.`centre` SET `NAME`='ARIENDA (2)' WHERE `ENCODEDKEY`='8a62dddb4b51f19d014b6b17f5633475';
+UPDATE `input_db`.`centre` SET `NAME`='DOÑA ROSARIO (4)' WHERE `ENCODEDKEY`='8a68b6e44b570fa1014b58c0e7464a83';
 
 
 update input_db.`centre`
@@ -330,17 +331,17 @@ INSERT INTO `mifostenant-default`.`m_group`
     )
 
 select
-    c.ENCODEDKEY                         as external_id,
-    300                                     as status_enum,
+    c.ENCODEDKEY                          as external_id,
+    300                                   as status_enum,
     DATE_FORMAT(date(
-       c.CREATIONDATE), '%Y-%m-%d')      as ACTIVATION_DATE,
+       c.CREATIONDATE), '%Y-%m-%d')       as ACTIVATION_DATE,
     mo.id                                 as OFFICE_ID,
     1                                     as STAFF_ID,                           
     1                                     as level_id,
     c.name                                   as DISPLAY_NAME,
     1                                     as activatedon_userid,
     DATE_FORMAT(date(
-       c.CREATIONDATE), '%Y-%m-%d')      as submittedon_date,
+       c.CREATIONDATE), '%Y-%m-%d')       as submittedon_date,
     1                                     as submittedon_userid
 from
     input_db.centre c
@@ -393,7 +394,7 @@ UPDATE `input_db`.`group` SET `GROUPNAME`='18459 (4)' WHERE `ENCODEDKEY`='8a1a2d
 UPDATE `input_db`.`group` SET `GROUPNAME`='18462 (3)' WHERE `ENCODEDKEY`='8a2abc564c491a32014c49c5a4ac0ed3';
 UPDATE `input_db`.`group` SET `GROUPNAME`='CEBU-1162 (3)' WHERE `ENCODEDKEY`='8a68cf2a4bcd8217014be89e6c7f2c82';
 UPDATE `input_db`.`group` SET `GROUPNAME`='CEBU-1162 (4)' WHERE `ENCODEDKEY`='8a8188bc52849d6401528c45516b742a';
-
+UPDATE `input_db`.`group` SET `GROUPNAME`='18425 (1)' WHERE `ENCODEDKEY`='8a8189a253f0fbaf0153f3ee885a55bc';
 
 INSERT INTO `mifostenant-default`.`m_group`
     (
@@ -492,7 +493,7 @@ INSERT INTO `mifostenant-default`.m_loan
 	`penalty_charges_repaid_derived`, `penalty_charges_waived_derived`,`penalty_charges_writtenoff_derived`, `penalty_charges_outstanding_derived`, 
 	`total_waived_derived`, `total_writtenoff_derived`, `total_costofloan_derived`, total_outstanding_derived,`loan_transaction_strategy_id`, `is_npa`, `days_in_year_enum`,  
     `interest_recalculation_enabled`,  `loan_product_counter`, `days_in_month_enum`, `version`
-)
+);
 
 select
 	la.ENCODEDKEY											as external_id, 
@@ -645,12 +646,10 @@ where m_loan_repayment_schedule.created_date <> ''
 ;
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
--- FEES
+-- FEES - I guess PH doesn't need this?
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
-
-select * from `mifostenant-default`.m_loan_transaction where loan_id = 2187; -- 5358
-
+/**
 select
     lt.TYPE,
     lt.ENCODEDKEY,
@@ -671,10 +670,8 @@ where
     and lt.type not like '%INTEREST%'
 
 order by lt.parentaccountkey asc, lt.creationdate asc
-
-
- ;
-
+;
+*/
 
 
 
@@ -838,19 +835,39 @@ SET
 
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
--- REPAYMENTS (MAKE BACKUP B
+-- REPAYMENTS (MAKE BACKUP B4 this step)
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
-SELECT * FROM `mifostenant-default`.m_loan_transaction 
-where transaction_type_enum = 2;
+-- Fix loans with no disbursement dates
+update `mifostenant-default`.m_loan ml
+join input_db.loanaccount la on ml.external_id = la.ENCODEDKEY
+set ml.disbursedon_date = la.creationdate
+where ml.id in 
+(
+	select * FROM 
+    (select
+		ml.id
+	from
+		input_db.loantransaction lt,
+		input_db.loanaccount la,
+		`mifostenant-default`.m_loan ml
+	where
+		lt.parentaccountkey = la.encodedkey
+		and ml.external_id = la.ENCODEDKEY
+		and la.ENCODEDKEY = lt.PARENTACCOUNTKEY
+		and lt.type = 'REPAYMENT'
+		and la.ASSIGNEDBRANCHKEY = '8a2b82e6455edd890145bbc90f6c75af'
+		and la.DISBURSEMENTDATE is null
+        GROUP BY ml.id) as tableID
+        
+) 
+;
 
-select * from `mifostenant-default`.m_loan where external_id = '8a10ca904b70d410014b712f36c101c3';
+ 
+-- Speed tests 
+SELECT * FROM `mifostenant-default`.m_loan_transaction where transaction_type_enum = 2;
 
-SELECT * from guatemala.loantransaction where type = 'REPAYMENT';
 
--- 45 sec / 370 = 8.2/sec
--- 105 sec / 802 = 7.6 sec
---  / 1837
 select
     lt.TYPE,
     lt.ENCODEDKEY,
@@ -859,7 +876,9 @@ select
     DATE_FORMAT(date(lt.entrydate), '%d/%m/%Y') as date,
     ifnull(lt.REVERSALTRANSACTIONKEY,'') as reversalKey,
     la.REPAYMENTINSTALLMENTS,
-	ml.id
+	ml.id,
+    la.DISBURSEMENTDATE,
+    la.CREATIONDATE
 from
     input_db.loantransaction lt,
     input_db.loanaccount la,
@@ -870,6 +889,7 @@ where
     and la.ENCODEDKEY = lt.PARENTACCOUNTKEY
     and lt.type = 'REPAYMENT'
     and la.ASSIGNEDBRANCHKEY = '8a2b82e6455edd890145bbc90f6c75af'
+    
 
 order by lt.parentaccountkey asc, lt.creationdate asc
 
@@ -928,7 +948,6 @@ SELECT * FROM `mifostenant-default`.m_client;
 Repayment query
 **/
 UPDATE `mifostenant-default`.m_client mc
--- select * from `mifostenant-default`.m_client mc
 join input_db.client c on c.encodedkey = mc.external_id
 join `mifostenant-default`.m_office o on o.external_id = c.ASSIGNEDBRANCHKEY
 join `mifostenant-default`.m_staff s on s.external_id = c.ASSIGNEDUSERKEY
@@ -949,9 +968,11 @@ set
 -- CREATE SAVINGS ACCOUNTS
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
+/**
 ALTER TABLE `mifostenant-default`.`m_savings_account` 
 CHANGE COLUMN `account_no` `account_no` VARCHAR(20) NULL COMMENT '' ,
 DROP INDEX `account_no_UNIQUE` ;
+*/
 
 ALTER TABLE `mifostenant-default`.`m_savings_account` 
 CHANGE COLUMN `account_no` `account_no` VARCHAR(20) NULL COMMENT '' ,
@@ -1137,6 +1158,47 @@ update `mifostenant-default`.m_savings_product
 set min_balance_for_interest_calculation = 1000
 ;
 
+
+
+-- ----------------------------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------------------------------
+-- 	Close accounts to match Mambu
+-- ----------------------------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------------------------------
+
+-- savings
+SELECT
+	'savings' as `type`,
+	ms.id, 
+    s.accountstate, 
+    DATE_FORMAT(date(s.CLOSEDDATE), '%d/%m/%Y') as date
+from input_db.loanaccount s, `mifostenant-default`.m_savings_account ms
+where ms.external_id = s.encodedkey
+and s.accountstate = 'CLOSED'
+union
+
+-- loans
+SELECT 
+	'loan' as `type`,
+	ml.id, 
+    l.accountstate, 
+    DATE_FORMAT(date(l.CLOSEDDATE), '%d/%m/%Y') as date
+from input_db.loanaccount l, `mifostenant-default`.m_loan ml
+where ml.external_id = l.encodedkey
+and l.accountstate = 'CLOSED_WRITTEN_OFF'
+union
+
+-- people
+SELECT 
+	'client' as `type`,
+	mc.id, 
+    c.state, 
+    DATE_FORMAT(date(c.CLOSEDDATE), '%d/%m/%Y') as date
+from input_db.`client` c, `mifostenant-default`.m_client mc
+where mc.external_id = c.encodedkey
+and c.state = 'EXITED'
+;
+
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
 -- 	FIX ID ISSUES 
@@ -1155,9 +1217,9 @@ set mc.external_id = c.id
 ;
 
 -- centers -> may have issues with double ids
-update `mifostenant-default`.m_group mc
-join input_db.`centre` c on mc.external_id = c.encodedkey
-set mc.external_id = c.id
+-- update `mifostenant-default`.m_group mc
+-- join input_db.`centre` c on mc.external_id = c.encodedkey
+-- set mc.external_id = c.id
 ;
 
 -- loan accounts
@@ -1171,9 +1233,17 @@ update `mifostenant-default`.m_savings_account mc
 join input_db.`savingsaccount` c on mc.external_id = c.encodedkey
 set mc.external_id = c.id
 ;
+-- 
 
 -- get savings transactions
 -- fix entry date issue
 -- 
+
+INSERT INTO `mifostenant-default`.`m_appuser` 
+(`id`, `is_deleted`, `office_id`, `username`, `firstname`, `lastname`, `password`, `email`,
+ `firsttime_login_remaining`, `nonexpired`, `nonlocked`, `nonexpired_credentials`, 
+ `enabled`, `last_time_password_updated`, `password_never_expires`,
+ `is_self_service_user`) 
+ VALUES ('3', '0', '6', 'pasig', 'pasig', 'pasig', 'abfb14da425c938e77bf3d7d13959535cbe0248cb09455b597a965d019a54664', 'pasig@pasig', 0, 1, 1, 1, 1, '2016-04-20', '0', 0);
 
 
