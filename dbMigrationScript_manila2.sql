@@ -1,6 +1,14 @@
+-- ####################################################################################
+-- ##############
+-- START
+-- ##############
+-- ####################################################################################
+
+
+
 -- ############################
 -- ##############
--- DATABASE PREP
+-- DATABASE PREP 
 -- ##############
 -- ############################
 
@@ -831,11 +839,9 @@ SET
     -- ?? Where is this used ??
     -- total_expected_costofloan_derived = 666
 ;
-
-
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
--- REPAYMENTS (MAKE BACKUP B4 this step)
+-- REPAYMENTS (MAKE BACKUP B4 this step) 
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
 -- Fix loans with no disbursement dates
@@ -863,11 +869,16 @@ where ml.id in
 ) 
 ;
 
- 
--- Speed tests 
+
+-- ####################################################################################
+-- ##############
+-- STOP 
+-- ##############
+-- ####################################################################################
+-- Speed tests - should be no less than 20-30 transactions/second
 SELECT * FROM `mifostenant-default`.m_loan_transaction where transaction_type_enum = 2;
 
-
+-- Export this next query to transactions.csv and then run the loan_transactions.py script
 select
     lt.TYPE,
     lt.ENCODEDKEY,
@@ -889,58 +900,18 @@ where
     and la.ENCODEDKEY = lt.PARENTACCOUNTKEY
     and lt.type = 'REPAYMENT'
     and la.ASSIGNEDBRANCHKEY = '8a2b82e6455edd890145bbc90f6c75af'
-    
-
 order by lt.parentaccountkey asc, lt.creationdate asc
-
-
  ;
 
--- DB -> DB
-/*
-insert into 
-	`mifostenant-default`.m_loan_transaction 
-	(
-		loan_id,
-		office_id,
-		external_id,
-		transaction_date,
-		amount,
-		submitted_on_date,
-		created_date,
-		appuser_id,
-        transaction_type_enum,
-        outstanding_loan_balance_derived,
-        principal_portion_derived,
-		interest_portion_derived
-	)
- select 
-	ml.id as loan_id,
-    mo.id as office_id,
-    glt.encodedkey as external_id,
-    glt.entrydate as transaction_date,
-    glt.amount as amount,
-    glt.creationdate as submitted_on_date,
-    glt.creationdate as created_date,
-    1 as appuser_id,
-    2 as transaction_type_enum,
-    glt.balance as outstanding_loan_balance_derived,
-    glt.principalamount as principal_portion_derived,
-    glt.interestamount as interest_amount_derived
-from 
-    input_db.loantransaction glt,
-	`mifostenant-default`.m_loan ml,
-    `mifostenant-default`.m_office mo
-where
-	glt.PARENTACCOUNTKEY = ml.external_id 
-AND (
-		glt.BRANCHKEY = mo.external_id
-		or glt.BRANCHKEY is null
-    )
-AND glt.type = 'REPAYMENT'
-order by glt.ENTRYDATE, glt.creationdate 
-;
-*/
+
+
+
+-- ####################################################################################
+-- ##############
+-- Start again mysql query 
+-- ##############
+-- ####################################################################################
+
 SET SQL_SAFE_UPDATES = 0;
 
 SELECT * FROM `mifostenant-default`.m_client;
@@ -1096,6 +1067,13 @@ INSERT INTO `mifostenant-default`.`m_payment_type`
 (`id`, `value`, `description`, `is_cash_payment`) 
 VALUES ('2', 'Interest Hack', 'Hack', '0');
 
+
+-- ####################################################################################
+-- ##############
+-- STOP 
+-- ##############
+-- ####################################################################################
+-- Export the next step to savings.csv and then run saving_transaction.py
 select
     st.TYPE,
     st.ENCODEDKEY,
@@ -1115,6 +1093,14 @@ where
     and sa.ASSIGNEDBRANCHKEY = '8a2b82e6455edd890145bbc90f6c75af'
 order by st.parentaccountkey asc, st.creationdate asc
  ;
+ 
+ 
+-- ####################################################################################
+-- ##############
+-- Start 
+-- ##############
+-- ####################################################################################
+-- Export the next step to savings.csv and then run saving_transaction.py
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
 -- 	REVERT DATES 
@@ -1158,14 +1144,11 @@ update `mifostenant-default`.m_savings_product
 set min_balance_for_interest_calculation = 1000
 ;
 
-
-
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
 -- 	Close accounts to match Mambu
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
-
 -- savings
 SELECT
 	'savings' as `type`,
