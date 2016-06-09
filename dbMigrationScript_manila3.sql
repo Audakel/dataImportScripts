@@ -260,7 +260,7 @@ INSERT INTO `mifostenant-default`.m_loan
 	`penalty_charges_repaid_derived`, `penalty_charges_waived_derived`,`penalty_charges_writtenoff_derived`, `penalty_charges_outstanding_derived`, 
 	`total_waived_derived`, `total_writtenoff_derived`, `total_costofloan_derived`, total_outstanding_derived,`loan_transaction_strategy_id`, `is_npa`, `days_in_year_enum`,  
     `interest_recalculation_enabled`,  `loan_product_counter`, `days_in_month_enum`, `version`
-);
+)
 
 select
 	la.ENCODEDKEY											as external_id, 
