@@ -1,5 +1,4 @@
-
-1CREATE DATABASE  IF NOT EXISTS `mifostenant-default` /*!40100 DEFAULT CHARACTER SET utf8 */;
+CREATE DATABASE  IF NOT EXISTS `mifostenant-default` /*!40100 DEFAULT CHARACTER SET utf8 */;
 USE `mifostenant-default`;
 -- MySQL dump 10.13  Distrib 5.6.28, for debian-linux-gnu (x86_64)
 --
