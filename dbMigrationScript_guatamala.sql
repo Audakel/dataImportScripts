@@ -756,7 +756,9 @@ select
     DATE_FORMAT(date(lt.CREATIONDATE), '%d/%m/%Y') as date,
     ifnull(lt.REVERSALTRANSACTIONKEY,'') as reversalKey,
     la.REPAYMENTINSTALLMENTS,
-	ml.id
+    ml.id,
+    la.DISBURSEMENTDATE,
+    la.CREATIONDATE
 from
     guatemala.loantransaction lt,
     guatemala.loanaccount la,
