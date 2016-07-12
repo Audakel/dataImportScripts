@@ -590,7 +590,7 @@ where ml.id in
 		and ml.external_id = la.ENCODEDKEY
 		and la.ENCODEDKEY = lt.PARENTACCOUNTKEY
 		and lt.type = 'REPAYMENT'
-		and la.ASSIGNEDBRANCHKEY = '8a2b82e6455edd890145bbc90f6c75af'
+	--	and la.ASSIGNEDBRANCHKEY = '8a2b82e6455edd890145bbc90f6c75af'
 		and la.DISBURSEMENTDATE is null
         GROUP BY ml.id) as tableID
         
@@ -632,7 +632,7 @@ where
     and ml.external_id = la.ENCODEDKEY
     and la.ENCODEDKEY = lt.PARENTACCOUNTKEY
     and lt.type = 'REPAYMENT'
-    and la.ASSIGNEDBRANCHKEY = '8a2b82e6455edd890145bbc90f6c75af'
+    -- and la.ASSIGNEDBRANCHKEY = '8a2b82e6455edd890145bbc90f6c75af'
 order by lt.parentaccountkey asc, lt.creationdate asc
  ;
 
@@ -746,8 +746,8 @@ left join `mifostenant-default`.m_group mg on mg.external_id = sa.ACCOUNTHOLDERK
 left join `mifostenant-default`.m_client mc on mc.external_id = sa.ACCOUNTHOLDERKEY 
 left join `mifostenant-default`.m_staff ms on ms.external_id = sa.ASSIGNEDUSERKEY
 left join `mifostenant-default`.m_savings_product msp on msp.description = sa.PRODUCTTYPEKEY
-where
-    sa.ASSIGNEDBRANCHKEY = '8a2b82e6455edd890145bbc90f6c75af'
+-- where
+   -- sa.ASSIGNEDBRANCHKEY = '8a2b82e6455edd890145bbc90f6c75af'
 ;
 
 -- Fix a few things
@@ -812,7 +812,7 @@ where
     st.parentaccountkey = sa.encodedkey
     and msa.external_id = sa.ENCODEDKEY
     and sa.ENCODEDKEY = st.PARENTACCOUNTKEY
-    and sa.ASSIGNEDBRANCHKEY = '8a2b82e6455edd890145bbc90f6c75af'
+    -- and sa.ASSIGNEDBRANCHKEY = '8a2b82e6455edd890145bbc90f6c75af'
 order by st.parentaccountkey asc, st.creationdate asc
  ;
  
