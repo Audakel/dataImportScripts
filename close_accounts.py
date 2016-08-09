@@ -31,11 +31,13 @@ def close_loan(transaction):
     try:
         res = requests.post(API_URL+ '/loans/{}/transactions?command=writeoff'.format(transaction.mifos_id), 
             headers=auth_token, json=data, verify=False, timeout=10).json()
-        good = res['changes']
+        good = res['changes'] # pause it for a second on good. see if everthing is good. 'changes' might be for good and bad now.
+        # maybe if status = 200. they don't send back statuses, they just send back a few parameters.
     except Exception as e:
         print("\nerror: client id: ", loanid, "err res: ",e, "\n", res)# last_repayment = {'id': res['resourceId'], 'amount': transaction.amount}
 
-
+# ask james about pdb statemants
+# import pdb. set interface.
 
 def close_savings(transaction):
     data = {

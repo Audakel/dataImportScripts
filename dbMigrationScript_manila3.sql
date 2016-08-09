@@ -1,3 +1,11 @@
+
+# another thing that may or may not have caused a promblem.accessible
+-- AT VERY Beginning
+-- admin -> system -> configuration -> disable everything. there will be one that can't be disabled - a rounding one maybe. It's not a big deal.
+-- the main one that was killing you: the reschedule- things. when someone makes a repayment, it does all the calculations for the rest of the repayments and everything.
+
+
+
 -- ####################################################################################
 -- ##############
 -- START - Highlight & run to next STOP (~ around line 600 is next stop as of wrting this)
@@ -57,12 +65,12 @@ SELECT
         coalesce(c.APPROVEDDATE, CURDATE()),
         coalesce(c.ACTIVATIONDATE, CURDATE()),
         coalesce(lad.DISBURSEMENTDATE, CURDATE())
-    )), '%Y-%m-%d')                  as ACTIVATION_DATE,
+    )), '%Y-%m-%d')                  as ACTIVATION_DATE, # special attention here to date format
     ifnull(o.id, 2)                     as OFFICE_ID,
     COALESCE(ms.id , 1)              as STAFF_ID,
     c.FIRSTNAME                      as FIRST_NAME,
     c.LASTNAME                       as LAST_NAME,
-    COALESCE(c.MIDDLENAME, '')       as MIDDLE_NAME,
+    COALESCE(c.MIDDLENAME, '')       as MIDDLE_NAME, # edge case for missing nmiddle name.
     concat(c.FIRSTNAME, ' ',
         COALESCE(c.MIDDLENAME, ''), ' ',
         c.LASTNAME)                     as DISPLAY_NAME,
@@ -90,13 +98,14 @@ from
     left join input_db.`group` g on g.ENCODEDKEY = gm.groupkey
     left join input_db.centre cn on cn.ENCODEDKEY = g.ASSIGNEDCENTREKEY
     left join input_db.branch b2 on cn.ASSIGNEDBRANCHKEY = b2.ENCODEDKEY
-;
+; -- Error Code: 1452. Cannot add or update a child row: a foreign key constraint fails (`mifostenant-default`.`m_client`, CONSTRAINT `FKCE00CAB3E0DD567A` FOREIGN KEY (`office_id`) REFERENCES `m_office` (`id`))
+
 
 -- fix a few things
 update `mifostenant-default`.m_client
 set
     account_no = ID,
-    office_joining_date = activation_date,
+    office_joining_date = activation_date, #mamanbu doesnt have these fields.
     submittedon_date = activation_date
 where id <> ''
 ;
@@ -144,12 +153,12 @@ where id in
     HAVING COUNT(*) > 1
 )
 limit 10000
-;
+; # some groupnames were duplicate . but this script didn't work perfect all the time.
 
 -- '18459'
 -- '012786216'
 -- 'CEBU-1161'
-SELECT * from input_db.`group`;
+-- SELECT * from input_db.`group`;
 
 UPDATE `input_db`.`group` SET `GROUPNAME`='CEBU-1162 (3)' WHERE `ENCODEDKEY`='8a8188bc52849d6401528c45516b742a';
 UPDATE `input_db`.`group` SET `GROUPNAME`=id WHERE `id`='094646451';
@@ -190,7 +199,7 @@ left join input_db.branch b on b.ENCODEDKEY = g.ASSIGNEDBRANCHKEY
 left join `mifostenant-default`.m_office mo on mo.external_id = b.encodedkey
 left join
 (
-    SELECT * FROM (
+    SELECT * FROM ( #special query looing for mifos couldn't have groups vreated before loan, but mambu allow group created after group loan created.
         SELECT DISBURSEMENTDATE, ACCOUNTHOLDERKEY, ACCOUNTHOLDERTYPE
         FROM input_db.loanaccount
         WHERE ACCOUNTHOLDERTYPE = 'GROUP'
@@ -208,7 +217,7 @@ group by
 UPDATE
     `mifostenant-default`.`m_group`
 SET
-    `hierarchy`= concat('.', parent_id, '.', id, '.'),
+    `hierarchy`= concat('.', parent_id, '.', id, '.'), # mifos uses this for dropdown menus.
     account_no = id,
     submittedon_date = activation_date
 WHERE
@@ -238,10 +247,11 @@ left join `mifostenant-default`.m_client mc on mc.external_id = gm.clientkey
 -- ----------------------------------------------------------------------------------------------------
 ALTER TABLE `mifostenant-default`.`m_loan` 
 CHANGE COLUMN `account_no` `account_no` VARCHAR(20) NULL COMMENT '' ,
-DROP INDEX `loan_account_no_UNIQUE` ;
+DROP INDEX `loan_account_no_UNIQUE` ; # loan account numbers can be the same in mambu.
 
 
-
+# you first create loan. then apply interest transactions - original interest. then a couple other things.
+#this is phase 1 - put entryies in db to crate loan.
 
 INSERT INTO `mifostenant-default`.m_loan 
 ( 
@@ -286,6 +296,7 @@ select
     date(la.DISBURSEMENTDATE) 								as disbursedon_date, 
 	0														as interest_charged_derived,
     -- ------------------------------------------------------------------------------------
+	-- all these are mifos defaults.
 	-- ------------------------------------------------------------------------------------
 	300 as `loan_status_id`,
 	1 as `fund_id`,
@@ -302,7 +313,7 @@ select
 	2 as `repayment_period_frequency_enum`,
 	0 as `repayment_frequency_day_of_week_enum`, 
 	1 as `amortization_method_enum`, 
-	1 as `submittedon_userid`, 
+	1 as `submittedon_userid`, # this stands for app or magrations
 	1 as `approvedon_userid`, 
 	1 as `disbursedon_userid`, 
 	-- ------------------------------------------------------------------------------------
@@ -343,6 +354,71 @@ left join `mifostenant-default`.m_client mc on mc.external_id = la.ACCOUNTHOLDER
 left join `mifostenant-default`.m_staff ms on ms.external_id = la.ASSIGNEDUSERKEY
 left join `mifostenant-default`.m_product_loan mpl on mpl.external_id = la.PRODUCTTYPEKEY	
 ;
+-- 60069 row(s) affected, 64 warning(s): 
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4 
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 6
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 6
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 7
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 7
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 7
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 7
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 6
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 7
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 7
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 7
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 7
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 7
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 7
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 7
+-- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4 Records: 60069  Duplicates: 0  Warnings: 3168
 
 
 -- Fix a few things
@@ -363,8 +439,9 @@ ADD UNIQUE INDEX `account_no_UNIQUE` (`account_no` ASC);
 -- LOAN SCHEDULE INSERT
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
-set global connect_timeout=60000;
+set global connect_timeout=60000; # if you do it in one session, this should work fo rthe rest of the time. You can check in settings.
 
+# if you're going to pay back every week, mifos makes entries for each of those weeks.
 INSERT INTO `mifostenant-default`.`m_loan_repayment_schedule`
 (
     `loan_id`, `duedate`, `principal_amount`,
@@ -417,7 +494,7 @@ where m_loan_repayment_schedule.created_date <> ''
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
 
-
+# to get mambu to match Kredits, they had to put fees in. But they didn't actually charge the fees. So not needed.
 
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
@@ -426,22 +503,23 @@ where m_loan_repayment_schedule.created_date <> ''
 -- ----------------------------------------------------------------------------------------------------
 
 set global connect_timeout=60000;
+
 UPDATE `mifostenant-default`.m_loan ml
 join input_db.loanaccount la on ml.external_id = la.encodedkey
 set
-	principal_amount_proposed = la.LOANAMOUNT, 
-	principal_amount = la.LOANAMOUNT,
-	approved_principal = la.LOANAMOUNT, 
-	principal_disbursed_derived = la.LOANAMOUNT,  
-	principal_outstanding_derived = la.LOANAMOUNT,
-	principal_repaid_derived = la.principalpaid, 
-	principal_repaid_derived = la.principalpaid, 
-	interest_repaid_derived = la.interestpaid, 
-	fee_charges_repaid_derived = la.feespaid
-;
+	principal_amount_proposed 			= la.LOANAMOUNT, 
+	principal_amount 					= la.LOANAMOUNT,
+	approved_principal 					= la.LOANAMOUNT, 
+	principal_disbursed_derived 		= la.LOANAMOUNT,  
+	principal_outstanding_derived 		= la.LOANAMOUNT,
+	principal_repaid_derived 			= la.principalpaid, 
+	principal_repaid_derived 			= la.principalpaid, 
+	interest_repaid_derived 			= la.interestpaid, 
+	fee_charges_repaid_derived 			= la.feespaid
+; 
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
--- LOAN DISBURSEMENT TRANSACTIONS
+-- LOAN DISBURSEMENT TRANSACTIONS. you appy for a loan, get approved, disbursed (interest applied, )
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
 
@@ -461,7 +539,7 @@ SELECT
     1                                                as `appuser_id`,
     0                                                as `manually_adjusted_or_reversed`,
     ifnull(ml.disbursedon_date,   
-        DATE_SUB(curdate(), INTERVAL 10 YEAR))        as `transaction_date`,
+        DATE_SUB(curdate(), INTERVAL 10 YEAR))        as `transaction_date`, # take it back 10 years, because if person A ctrated at date xx, he cant have a loan from the day before xx. Mambu allows it. Put the times in an appropriate spot. Mifos api only checks once for that stuff. then we can recreate how mambu had it.
     ifnull(ml.disbursedon_date,   
         DATE_SUB(curdate(), INTERVAL 10 YEAR))        as `submitted_on_date`,
     ifnull(ml.disbursedon_date,   
@@ -488,7 +566,7 @@ join (
 	Group By PARENTACCOUNTKEY
 ) as t4 on ml.external_id = t4.PARENTACCOUNTKEY
 set ml.interest_charged_derived = t4.interest   
-;
+; # how much total interest is due. how much they should have paid.
 
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
@@ -533,7 +611,7 @@ UPDATE
 join
 	`mifostenant-default`.m_loan_charge mlc on mlc.loan_id = ml.id
 SET 
-	ml.fee_charges_charged_derived = mlc.amount;
+	ml.fee_charges_charged_derived = mlc.amount; #mi;ght have been where the fake fees went in. on disbursal had to make fake fees.
 
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
@@ -545,9 +623,9 @@ SET
 UPDATE 
 	`mifostenant-default`.`m_loan` 
 SET 
-	principal_outstanding_derived = (principal_disbursed_derived - principal_repaid_derived),
-	interest_outstanding_derived = (interest_charged_derived - interest_repaid_derived),
-	fee_charges_outstanding_derived = (fee_charges_charged_derived - fee_charges_repaid_derived),
+	principal_outstanding_derived 		= (principal_disbursed_derived - principal_repaid_derived),
+	interest_outstanding_derived 		= (interest_charged_derived - interest_repaid_derived),
+	fee_charges_outstanding_derived 	= (fee_charges_charged_derived - fee_charges_repaid_derived),
     penalty_charges_outstanding_derived = (penalty_charges_charged_derived - penalty_charges_repaid_derived)
 ;
 
@@ -565,7 +643,7 @@ SET
     -- ?? Where is this used ??
     -- total_expected_costofloan_derived = 666
 ;
-
+# not totally necessary. The scripts take care of it.
 
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
@@ -597,9 +675,17 @@ where ml.id in
 ) 
 ;
 
+
+update `mifostenant-default`.c_configuration
+set enabled = 1
+where name = 'allow-transactions-on-holiday'
+;
+
+-- Error Code: 1064. You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '' at line 18
+
 -- ####################################################################################
 -- ##############
--- STOP (MAKE BACKUP of db B4 this next step) 
+-- STOP 1 (MAKE BACKUP of db B4 this next step) 
 -- Run the next  'EXPORT' comand and export this next query to transactions.csv and 
 --    then run the loan_transactions.py script
 -- ##############
@@ -647,9 +733,7 @@ order by lt.parentaccountkey asc, lt.creationdate asc
 
 SET SQL_SAFE_UPDATES = 0;
 
-SELECT * FROM `mifostenant-default`.m_client;
 
--- Repayment query
 UPDATE `mifostenant-default`.m_client mc
 join input_db.client c on c.encodedkey = mc.external_id
 join `mifostenant-default`.m_office o on o.external_id = c.ASSIGNEDBRANCHKEY
@@ -657,7 +741,8 @@ join `mifostenant-default`.m_staff s on s.external_id = c.ASSIGNEDUSERKEY
 set 
 	mc.office_id = o.id,
     mc.staff_id = s.id
-;
+; # needed easier way to connect back to mambu ids. Maybe some clients needed to be fixed.
+# instead of having mambu ids, its switching them over to mifos ids.
 
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
@@ -746,8 +831,8 @@ left join `mifostenant-default`.m_group mg on mg.external_id = sa.ACCOUNTHOLDERK
 left join `mifostenant-default`.m_client mc on mc.external_id = sa.ACCOUNTHOLDERKEY 
 left join `mifostenant-default`.m_staff ms on ms.external_id = sa.ASSIGNEDUSERKEY
 left join `mifostenant-default`.m_savings_product msp on msp.description = sa.PRODUCTTYPEKEY
--- where
-   -- sa.ASSIGNEDBRANCHKEY = '8a2b82e6455edd890145bbc90f6c75af'
+# where
+#    sa.ASSIGNEDBRANCHKEY = '8a2b82e6455edd890145bbc90f6c75af'
 ;
 
 -- Fix a few things
@@ -785,12 +870,12 @@ set
 -- ----------------------------------------------------------------------------------------------------
 INSERT INTO `mifostenant-default`.`m_payment_type` 
 (`id`, `value`, `description`, `is_cash_payment`) 
-VALUES ('2', 'Interest Hack', 'Hack', '0');
+VALUES ('2', 'Interest Hack', 'Hack', '0'); # cash, bank card, etc. Tehre was something to do with rounding that was causing errors. Or needed a payment type, to classiffy the payment as. 
 
 
 -- ####################################################################################
 -- ##############
--- STOP (MAKE BACKUP of db B4 this next step) Run the next comand 'EXPORT' and 
+-- STOP 2 (MAKE BACKUP of db B4 this next step) Run the next comand 'EXPORT' and 
 -- export the next step to savings.csv and then run saving_transaction.py
 -- ##############
 -- ####################################################################################
@@ -860,15 +945,17 @@ where mpd.payment_type_id = 2;
 -- ----------------------------------------------------------------------------------------------------
 update `mifostenant-default`.m_savings_account
 set min_balance_for_interest_calculation = 1000
-;
+; # they need at least 1000 php to get interest. anything below, they won't get interest calculated.
 
 update `mifostenant-default`.m_savings_product
 set min_balance_for_interest_calculation = 1000
 ;
 
+# try putting any loans with 'amount' as null to amount = 0. That should stop the amount cannot be null errors.
+
 -- ####################################################################################
 -- ##############
--- STOP Run the next comand 'EXPORT' and export the next step to loanWriteOff.csv and then run close_accounts.py
+-- STOP 3 Run the next comand 'EXPORT' and export the next step to loanWriteOff.csv and then run close_accounts.py
 -- ##############
 -- ####################################################################################
 
@@ -961,10 +1048,19 @@ INSERT INTO `mifostenant-default`.`m_appuser`
  `enabled`, `last_time_password_updated`, `password_never_expires`,
  `is_self_service_user`) 
  VALUES ('3', '0', '6', 'pasig', 'pasig', 'pasig', 'abfb14da425c938e77bf3d7d13959535cbe0248cb09455b597a965d019a54664', 'pasig@pasig', 0, 1, 1, 1, 1, '2016-04-20', '0', 0);
-
+# might not have even worked. Trying to create a user that could only see pasig accounts. So when the user logs in, they don't see all the laons, only the ones in pasig.
 
 -- ####################################################################################
 -- ##############
 -- STOP 
 -- ##############
 -- ####################################################################################
+
+
+-- To do
+-- admin -> system -> scheduler jobs 
+-- click all then run selected jobs.accessible
+
+-- then refresh and look at previous run status.accessible
+-- "update loans summary" - important one. fixes all those totals at bottom.
+
