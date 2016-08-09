@@ -98,8 +98,7 @@ from
     left join input_db.`group` g on g.ENCODEDKEY = gm.groupkey
     left join input_db.centre cn on cn.ENCODEDKEY = g.ASSIGNEDCENTREKEY
     left join input_db.branch b2 on cn.ASSIGNEDBRANCHKEY = b2.ENCODEDKEY
-; -- Error Code: 1452. Cannot add or update a child row: a foreign key constraint fails (`mifostenant-default`.`m_client`, CONSTRAINT `FKCE00CAB3E0DD567A` FOREIGN KEY (`office_id`) REFERENCES `m_office` (`id`))
-
+;
 
 -- fix a few things
 update `mifostenant-default`.m_client
@@ -158,7 +157,7 @@ limit 10000
 -- '18459'
 -- '012786216'
 -- 'CEBU-1161'
--- SELECT * from input_db.`group`;
+SELECT * from input_db.`group`;
 
 UPDATE `input_db`.`group` SET `GROUPNAME`='CEBU-1162 (3)' WHERE `ENCODEDKEY`='8a8188bc52849d6401528c45516b742a';
 UPDATE `input_db`.`group` SET `GROUPNAME`=id WHERE `id`='094646451';
@@ -354,71 +353,6 @@ left join `mifostenant-default`.m_client mc on mc.external_id = la.ACCOUNTHOLDER
 left join `mifostenant-default`.m_staff ms on ms.external_id = la.ASSIGNEDUSERKEY
 left join `mifostenant-default`.m_product_loan mpl on mpl.external_id = la.PRODUCTTYPEKEY	
 ;
--- 60069 row(s) affected, 64 warning(s): 
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4 
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 6
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 6
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 7
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 7
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 7
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 7
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 6
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 7
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 7
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 7
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 7
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 7
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 7
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 7
--- 1265 Data truncated for column 'nominal_interest_rate_per_period' at row 4 Records: 60069  Duplicates: 0  Warnings: 3168
 
 
 -- Fix a few things
@@ -733,7 +667,9 @@ order by lt.parentaccountkey asc, lt.creationdate asc
 
 SET SQL_SAFE_UPDATES = 0;
 
+SELECT * FROM `mifostenant-default`.m_client;
 
+-- Repayment query
 UPDATE `mifostenant-default`.m_client mc
 join input_db.client c on c.encodedkey = mc.external_id
 join `mifostenant-default`.m_office o on o.external_id = c.ASSIGNEDBRANCHKEY
@@ -743,6 +679,8 @@ set
     mc.staff_id = s.id
 ; # needed easier way to connect back to mambu ids. Maybe some clients needed to be fixed.
 # instead of having mambu ids, its switching them over to mifos ids.
+# rows matched 15052
+select * from m_client;
 
 -- ----------------------------------------------------------------------------------------------------
 -- ----------------------------------------------------------------------------------------------------
@@ -970,7 +908,7 @@ SELECT
 	ms.id, 
     s.accountstate, 
     DATE_FORMAT(date(s.CLOSEDDATE), '%d/%m/%Y') as date
-from input_db.loanaccount s, `mifostenant-default`.m_savings_account ms
+from input_db.savingsaccount s, `mifostenant-default`.m_savings_account ms
 where ms.external_id = s.encodedkey
 and s.accountstate = 'CLOSED'
 union
@@ -1049,6 +987,35 @@ INSERT INTO `mifostenant-default`.`m_appuser`
  `is_self_service_user`) 
  VALUES ('3', '0', '6', 'pasig', 'pasig', 'pasig', 'abfb14da425c938e77bf3d7d13959535cbe0248cb09455b597a965d019a54664', 'pasig@pasig', 0, 1, 1, 1, 1, '2016-04-20', '0', 0);
 # might not have even worked. Trying to create a user that could only see pasig accounts. So when the user logs in, they don't see all the laons, only the ones in pasig.
+
+
+
+-- Quick and dirty fix of savings account errors.
+	-- fix the balance. 
+		# I'm not even gonna bother with the other derived columns, that's how quick and dirty this is.
+		# I'm also not going to touch the savings transactions. 
+UPDATE `mifostenant-default`.m_savings_account msa 
+	JOIN `input_db`.savingsaccount as sa
+	ON sa.ID = msa.external_id
+SET 
+	msa.account_balance_derived = sa.BALANCE
+WHERE
+	sa.BALANCE <> msa.account_balance_derived
+;
+
+-- Update loans to jgl type
+
+UPDATE `mifostenant-default`.m_loan l
+	JOIN `mifostenant-default`.m_group_client as gc
+	ON gc.client_id = l.client_id
+SET 
+	l.group_id = gc.group_id,
+	l.product_id = 3
+WHERE
+	gc.client_id in (select client_id from `mifostenant-default`.m_group_client)
+;
+
+
 
 -- ####################################################################################
 -- ##############
