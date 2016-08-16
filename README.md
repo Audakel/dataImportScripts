@@ -2,7 +2,7 @@
 currently supports Mambu -> Mifos
 
 
-How to do Philippines Migration:
+## How to do Philippines Migration:
 
 Set up Mifos and Databases
 
@@ -11,8 +11,6 @@ Set up Mifos and Databases
  - Get a backup of the Mambu data. Use the retrieval tool aws (http://timkay.com/aws/). Get the awssecret from someone who knows it. Extract the backup once it downloads.
  - Open Workbench and open the connection that has mifostenant-default.
  - Import the mambu data from the backup.
- ![alt tag](http://url/to/img.png)
-
 
 Create Basic Info in Mifos
 
